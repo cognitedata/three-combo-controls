@@ -1,0 +1,50 @@
+{
+  "name": "three-combo-controls",
+  "version": "1.0.0",
+  "description": "Orbit & first person camera controller for THREE.JS",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "author": "Fredrik Anfinsen (fredrik.anfinsen@cognite.com)",
+  "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "cognite",
+    "THREE",
+    "3d",
+    "orbit",
+    "camera",
+    "controls",
+    "combo",
+    "three.js",
+    "typescript"
+  ],
+  "scripts": {
+    "prepublishOnly": "yarn build",
+    "test": "jest --config=jest.config.js",
+    "lint": "tslint -c tslint.json -p tsconfig.json",
+    "build": "rollup -c",
+    "watch": "rollup -cw"
+  },
+  "devDependencies": {
+    "@types/three": "^0.93.9",
+    "prettier": "^1.15.2",
+    "rollup": "^0.67.1",
+    "rollup-plugin-livereload": "^0.6.0",
+    "rollup-plugin-serve": "^0.6.0",
+    "rollup-plugin-typescript2": "^0.18.0",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "^1.16.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.1.6"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "three": "^0.98.0"
+  }
+}
