@@ -426,10 +426,16 @@ export default class ComboControls extends EventDispatcher {
     const azimuthAngle =
       this.keyboardRotationSpeedAzimuth *
       ((keyboard.isPressed('right') ? 0 : 1) - (keyboard.isPressed('left') ? 0 : 1));
-    const polarAngle =
+    let polarAngle =
       this.keyboardRotationSpeedPolar *
       ((keyboard.isPressed('down') ? 0 : 1) - (keyboard.isPressed('up') ? 0 : 1));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
+      const { sphericalEnd } = this;
+      const oldPhi = sphericalEnd.phi;
+      sphericalEnd.phi += polarAngle;
+      sphericalEnd.makeSafe();
+      polarAngle = sphericalEnd.phi - oldPhi;
+      sphericalEnd.phi = oldPhi;
       this.rotateFP(azimuthAngle, polarAngle);
     }
   }
@@ -463,21 +469,7 @@ export default class ComboControls extends EventDispatcher {
     const distToTarget = targetEnd.distanceTo(camera.position);
     reusableCamera.getWorldDirection(reusableVector3);
     targetEnd.addVectors(camera.position, reusableVector3.multiplyScalar(distToTarget));
-    sphericalEnd.setFromVector3(reusableVector3.subVectors(camera.position, targetEnd));
-
-    // const theta = ThreeMath.clamp(
-    //   sphericalEnd.theta + azimuthAngle,
-    //   this.minAzimuthAngle,
-    //   this.maxAzimuthAngle,
-    // );
-    // const phi = ThreeMath.clamp(
-    //   sphericalEnd.phi + polarAngle,
-    //   this.minPolarAngle,
-    //   this.maxPolarAngle,
-    // );
-    // sphericalEnd.theta = theta;
-    // sphericalEnd.phi = phi;
-    sphericalEnd.makeSafe();
+    sphericalEnd.setFromVector3(reusableVector3.subVectors(reusableCamera.position, targetEnd));
   }
 
   private pan = (deltaX: number, deltaY: number) => {
