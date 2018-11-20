@@ -425,10 +425,10 @@ export default class ComboControls extends EventDispatcher {
     // rotate
     const azimuthAngle =
       this.keyboardRotationSpeedAzimuth *
-      ((keyboard.isPressed('right') ? 0 : 1) - (keyboard.isPressed('left') ? 0 : 1));
+      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
     let polarAngle =
       this.keyboardRotationSpeedPolar *
-      ((keyboard.isPressed('down') ? 0 : 1) - (keyboard.isPressed('up') ? 0 : 1));
+      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
       const { sphericalEnd } = this;
       const oldPhi = sphericalEnd.phi;
@@ -436,7 +436,7 @@ export default class ComboControls extends EventDispatcher {
       sphericalEnd.makeSafe();
       polarAngle = sphericalEnd.phi - oldPhi;
       sphericalEnd.phi = oldPhi;
-      this.rotateFP(azimuthAngle, polarAngle);
+      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
     }
   }
 
@@ -457,7 +457,7 @@ export default class ComboControls extends EventDispatcher {
     sphericalEnd.makeSafe();
   }
 
-  private rotateFP = (azimuthAngle: number, polarAngle: number) => {
+  private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
     const { camera, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
