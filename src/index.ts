@@ -192,6 +192,9 @@ export default class ComboControls extends EventDispatcher {
         this.startMousePan(event);
         break;
       }
+
+      default:
+        break;
     }
   }
 
@@ -223,6 +226,9 @@ export default class ComboControls extends EventDispatcher {
         this.startTouchPinch(event);
         break;
       }
+
+      default:
+        break;
     }
   }
 
