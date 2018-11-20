@@ -40,7 +40,8 @@ function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
   };
 }
 
-const defaultRotationSpeed = Math.PI / 360; // half degree per pixel
+const defaultPointerRotationSpeed = Math.PI / 360; // half degree per pixel
+const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 5;
 
 export default class ComboControls extends EventDispatcher {
   public enabled: boolean = true;
@@ -53,16 +54,18 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
-  public mouseRotationSpeedAzimuth: number = defaultRotationSpeed; // radians per pixel
-  public mouseRotationSpeedPolar: number = defaultRotationSpeed; // radians per pixel
-  public touchRotationSpeedAzimuth: number = defaultRotationSpeed; // radians per pixel
-  public touchRotationSpeedPolar: number = defaultRotationSpeed; // radians per pixel
+  public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
+  public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
+  public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
+  public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
   public pinchEpsilon: number = 2;
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
   public dispose: () => void;
 
   private camera: PerspectiveCamera;
+  private reusableCamera: PerspectiveCamera = new PerspectiveCamera();
+  private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
   private target: Vector3 = new Vector3();
   private targetEnd: Vector3 = new Vector3();
@@ -192,6 +195,9 @@ export default class ComboControls extends EventDispatcher {
         this.startMousePan(event);
         break;
       }
+
+      default:
+        break;
     }
   }
 
@@ -223,6 +229,9 @@ export default class ComboControls extends EventDispatcher {
         this.startTouchPinch(event);
         break;
       }
+
+      default:
+        break;
     }
   }
 
@@ -246,9 +255,9 @@ export default class ComboControls extends EventDispatcher {
         event.clientY,
       );
       const azimuthAngle =
-        (previousOffset.x - newOffset.x) * this.mouseRotationSpeedAzimuth;
+        (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
       const polarAngle =
-        (previousOffset.y - newOffset.y) * this.mouseRotationSpeedPolar;
+        (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
       this.rotate(azimuthAngle, polarAngle);
     };
@@ -308,9 +317,9 @@ export default class ComboControls extends EventDispatcher {
         event.touches[0].clientY,
       );
       const azimuthAngle =
-        (previousOffset.x - newOffset.x) * this.touchRotationSpeedAzimuth;
+        (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
       const polarAngle =
-        (previousOffset.y - newOffset.y) * this.touchRotationSpeedPolar;
+        (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
       this.rotate(azimuthAngle, polarAngle);
     };
@@ -412,6 +421,23 @@ export default class ComboControls extends EventDispatcher {
     if (keyboard.isPressed('e')) {
       this.pan(0, keyboardPanSpeed);
     }
+
+    // rotate
+    const azimuthAngle =
+      this.keyboardRotationSpeedAzimuth *
+      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
+    let polarAngle =
+      this.keyboardRotationSpeedPolar *
+      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
+    if (azimuthAngle !== 0 || polarAngle !== 0) {
+      const { sphericalEnd } = this;
+      const oldPhi = sphericalEnd.phi;
+      sphericalEnd.phi += polarAngle;
+      sphericalEnd.makeSafe();
+      polarAngle = sphericalEnd.phi - oldPhi;
+      sphericalEnd.phi = oldPhi;
+      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+    }
   }
 
   private rotate = (azimuthAngle: number, polarAngle: number) => {
@@ -429,6 +455,21 @@ export default class ComboControls extends EventDispatcher {
     sphericalEnd.theta = theta;
     sphericalEnd.phi = phi;
     sphericalEnd.makeSafe();
+  }
+
+  private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
+    const { camera, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    reusableCamera.copy(camera);
+    reusableCamera.position.copy(camera.position);
+    reusableCamera.lookAt(targetEnd);
+
+    reusableCamera.rotateX(polarAngle);
+    reusableCamera.rotateY(azimuthAngle);
+
+    const distToTarget = targetEnd.distanceTo(camera.position);
+    reusableCamera.getWorldDirection(reusableVector3);
+    targetEnd.addVectors(camera.position, reusableVector3.multiplyScalar(distToTarget));
+    sphericalEnd.setFromVector3(reusableVector3.subVectors(reusableCamera.position, targetEnd));
   }
 
   private pan = (deltaX: number, deltaY: number) => {
