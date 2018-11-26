@@ -65,6 +65,7 @@ export default class ComboControls extends EventDispatcher {
   public EPSILON: number = 0.001;
   public dispose: () => void;
 
+  private temporarilyDisableDamping: Boolean = false;
   private camera: PerspectiveCamera;
   private reusableCamera: PerspectiveCamera = new PerspectiveCamera();
   private reusableVector3: Vector3 = new Vector3();
@@ -124,7 +125,8 @@ export default class ComboControls extends EventDispatcher {
 
     let changed = false;
 
-    const deltaFactor = enableDamping ? dampingFactor : 1;
+    const deltaFactor = (enableDamping && !this.temporarilyDisableDamping) ? dampingFactor : 1;
+    this.temporarilyDisableDamping = false;
 
     if (
       Math.abs(deltaTheta) > EPSILON ||
@@ -436,6 +438,7 @@ export default class ComboControls extends EventDispatcher {
       this.keyboardRotationSpeedPolar *
       (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
+      this.temporarilyDisableDamping = true;
       const { sphericalEnd } = this;
       const oldPhi = sphericalEnd.phi;
       sphericalEnd.phi += polarAngle;
