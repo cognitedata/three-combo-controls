@@ -60,8 +60,5 @@ typings/
 # next.js build output
 .next
 
-# rollup typescript cache
-.rpt2_cache
-
 # dist folder
 dist/
