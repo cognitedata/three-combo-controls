@@ -269,7 +269,11 @@ export default class ComboControls extends EventDispatcher {
       const polarAngle =
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
-      this.rotate(azimuthAngle, polarAngle);
+      if (this.firstPersonMode) {
+        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+      } else {
+        this.rotate(azimuthAngle, polarAngle);
+      }
     };
 
     const onMouseUp = () => {
@@ -331,7 +335,11 @@ export default class ComboControls extends EventDispatcher {
       const polarAngle =
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
-      this.rotate(azimuthAngle, polarAngle);
+      if (this.firstPersonMode) {
+        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+      } else {
+        this.rotate(azimuthAngle, polarAngle);
+      }
     };
 
     const onTouchStart = (event: TouchEvent) => {
