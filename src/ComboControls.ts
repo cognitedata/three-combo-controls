@@ -8,6 +8,7 @@ import {
   Spherical,
   Vector2,
   Vector3,
+  Raycaster,
 } from 'three';
 import Keyboard from './Keyboard';
 
@@ -82,6 +83,12 @@ export default class ComboControls extends EventDispatcher {
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
   private newCameraPosition: Vector3 = new Vector3();
+  private mouse: Vector2 = new Vector2();
+  private raycaster: Raycaster = new Raycaster();
+  private minZoomDistance: number = 0.3;
+  private maxZoomDistance: number = 1;
+  private minDistToTarget: number = 1;
+
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
     super();
     this.camera = camera;
@@ -216,14 +223,16 @@ export default class ComboControls extends EventDispatcher {
     event.preventDefault();
 
     const { domElement } = this;
-    const { x, y } = getHTMLOffset(
+    let { x, y } = getHTMLOffset(
       domElement,
       event.clientX,
       event.clientY,
     );
+    x = (x / domElement.clientWidth) * 2 - 1;
+    y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = event.deltaY < 0;
-    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
+    this.dolly(x, y, this.getZoomDistance(dollyIn));
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -502,25 +511,84 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
-    const { dynamicTarget, minDistance, maxDistance, sphericalEnd, targetEnd, offsetVector, newCameraPosition } = this;
-    const newRadius = sphericalEnd.radius + deltaDistance;
-    if (!dynamicTarget || newRadius >= minDistance) {
-      sphericalEnd.radius = ThreeMath.clamp(newRadius, minDistance, maxDistance);
-      return;
-    }
-    // at this point: dynamic target is enabled and newRadius < this.minDistance
+    const {
+      dynamicTarget,
+      minDistToTarget,
+      mouse,
+      raycaster,
+      reusableVector3,
+      sphericalEnd,
+      targetEnd,
+    } = this;
+    const { fov } = this.camera;
+    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - fov * 0.5));
+    const distFromCameraToCursor = Math.sqrt(
+      distFromCameraToScreenCenter * distFromCameraToScreenCenter +
+      x * x +
+      y * y,
+    );
+    const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
+    const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
-    sphericalEnd.radius = newRadius;
-    newCameraPosition.setFromSpherical(sphericalEnd).add(targetEnd);
-    offsetVector.subVectors(targetEnd, newCameraPosition).normalize().multiplyScalar(minDistance);
-    targetEnd.addVectors(newCameraPosition, offsetVector);
-    sphericalEnd.radius = minDistance;
+    // find the ray from camera to (x, y)
+    mouse.set(x, y);
+    const camera = this.reusableCamera;
+    camera.copy(this.camera);
+    camera.position.setFromSpherical(sphericalEnd).add(targetEnd);
+    camera.lookAt(targetEnd);
+    raycaster.setFromCamera(mouse, camera);
+
+    // movement along cameraDirection
+    const cameraDirection = reusableVector3;
+    camera.getWorldDirection(cameraDirection);
+    let tCamDir = deltaDistance;
+    let radius = distToTarget - tCamDir;
+
+    if (radius < minDistToTarget) {
+      radius = minDistToTarget;
+      if (dynamicTarget) {
+        // push targetEnd forward
+        targetEnd.add(cameraDirection.normalize().multiplyScalar(tCamDir));
+      } else {
+        tCamDir = radius - distToTarget;
+      }
+    }
+
+    // movement along ray
+    const tRay = tCamDir * ratio;
+
+    sphericalEnd.radius = radius;
+
+    cameraDirection.normalize().multiplyScalar(tCamDir);
+    const rayDir = raycaster.ray.direction.normalize().multiplyScalar(tRay);
+    const targetOffset = rayDir.sub(cameraDirection);
+    targetEnd.add(targetOffset);
+
+    return;
   }
 
   private getDollyDeltaDistance = (dollyIn: boolean) => {
     const { sphericalEnd, dollyFactor } = this;
     const factor = dollyIn ? dollyFactor : (1 / dollyFactor);
     return sphericalEnd.radius * (factor - 1);
+  }
+
+  private getZoomDistance = (dollyIn: boolean) => {
+    const { minZoomDistance, maxZoomDistance } = this;
+    const { radius } = this.sphericalEnd;
+    let distance;
+    const near = 2;
+    const far = near * 100;
+    if (radius <= near) {
+      distance = minZoomDistance; //
+    } else if (radius >= far) {
+      distance = maxZoomDistance;
+    } else {
+      const factor = (maxZoomDistance - minZoomDistance) / (far - near);
+      distance = minZoomDistance + factor * (radius - near);
+    }
+
+    return (dollyIn ? 1 : -1) * distance;
   }
 
   private panLeft = (distance: number) => {
