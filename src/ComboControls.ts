@@ -42,6 +42,7 @@ function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
 
 const defaultPointerRotationSpeed = Math.PI / 360; // half degree per pixel
 const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 5;
+const defaultSpeedFactor = 3;
 
 export default class ComboControls extends EventDispatcher {
   public enabled: boolean = true;
@@ -67,6 +68,7 @@ export default class ComboControls extends EventDispatcher {
 
   private temporarilyDisableDamping: Boolean = false;
   private camera: PerspectiveCamera;
+  private firstPersonMode: Boolean = false;
   private reusableCamera: PerspectiveCamera = new PerspectiveCamera();
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
@@ -267,7 +269,11 @@ export default class ComboControls extends EventDispatcher {
       const polarAngle =
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
-      this.rotate(azimuthAngle, polarAngle);
+      if (this.firstPersonMode) {
+        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+      } else {
+        this.rotate(azimuthAngle, polarAngle);
+      }
     };
 
     const onMouseUp = () => {
@@ -329,7 +335,11 @@ export default class ComboControls extends EventDispatcher {
       const polarAngle =
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
-      this.rotate(azimuthAngle, polarAngle);
+      if (this.firstPersonMode) {
+        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+      } else {
+        this.rotate(azimuthAngle, polarAngle);
+      }
     };
 
     const onTouchStart = (event: TouchEvent) => {
@@ -405,29 +415,25 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) { return; }
 
     const { keyboard, keyboardPanSpeed } = this;
-    // dolly in
-    if (keyboard.isPressed('w')) {
-      this.dolly(0, 0, this.getDollyDeltaDistance(true));
-    }
-    // dolly out
-    if (keyboard.isPressed('s')) {
-      this.dolly(0, 0, this.getDollyDeltaDistance(false));
+
+    this.firstPersonMode = false;
+
+    const speedFactor = keyboard.isPressed('shift') ? defaultSpeedFactor : 1;
+    const forwardMovement = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
+    if (forwardMovement !== undefined) {
+      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(forwardMovement));
+      this.firstPersonMode = true;
     }
 
     // pan horizontally
-    if (keyboard.isPressed('a')) {
-      this.pan(keyboardPanSpeed, 0);
-    }
-    if (keyboard.isPressed('d')) {
-      this.pan(-keyboardPanSpeed, 0);
-    }
-
-    // pan vertically
-    if (keyboard.isPressed('q')) {
-      this.pan(0, -keyboardPanSpeed);
-    }
-    if (keyboard.isPressed('e')) {
-      this.pan(0, keyboardPanSpeed);
+    const horizontalMovement = Number(keyboard.isPressed('a')) - Number(keyboard.isPressed('d'));
+    const verticalMovement = Number(keyboard.isPressed('e')) - Number(keyboard.isPressed('q'));
+    if (horizontalMovement !== 0 || verticalMovement !== 0) {
+      this.pan(
+        speedFactor * keyboardPanSpeed * horizontalMovement,
+        speedFactor * keyboardPanSpeed * verticalMovement,
+      );
+      this.firstPersonMode = true;
     }
 
     // rotate
