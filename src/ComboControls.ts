@@ -58,11 +58,12 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
-  public defaultFirstPersonRotationFactor: number = 0.4;
-  public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed;
-  public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed;
+  public firstPersonRotationFactor: number = 0.4;
+  public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
+  public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
+  public zoomSpeedFactor: number = 4;
   public pinchEpsilon: number = 2;
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
@@ -83,11 +84,7 @@ export default class ComboControls extends EventDispatcher {
 
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
-  private newCameraPosition: Vector3 = new Vector3();
-  private mouse: Vector2 = new Vector2();
   private raycaster: Raycaster = new Raycaster();
-  private minZoomDistance: number = 0.3;
-  private maxZoomDistance: number = 1;
   private minDistToTarget: number = 1;
 
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
@@ -223,7 +220,7 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) { return; }
     event.preventDefault();
 
-    const { domElement } = this;
+    const { domElement, zoomSpeedFactor } = this;
     let { x, y } = getHTMLOffset(
       domElement,
       event.clientX,
@@ -233,7 +230,7 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = event.deltaY < 0;
-    this.dolly(x, y, this.getZoomDistance(dollyIn));
+    this.dolly(x, y, zoomSpeedFactor * this.getDollyDeltaDistance(dollyIn));
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -483,13 +480,13 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
-    const { camera, defaultFirstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
     reusableCamera.lookAt(targetEnd);
 
-    reusableCamera.rotateX(defaultFirstPersonRotationFactor * polarAngle);
-    reusableCamera.rotateY(defaultFirstPersonRotationFactor * azimuthAngle);
+    reusableCamera.rotateX(firstPersonRotationFactor * polarAngle);
+    reusableCamera.rotateY(firstPersonRotationFactor * azimuthAngle);
 
     const distToTarget = targetEnd.distanceTo(camera.position);
     reusableCamera.getWorldDirection(reusableVector3);
@@ -515,7 +512,6 @@ export default class ComboControls extends EventDispatcher {
     const {
       dynamicTarget,
       minDistToTarget,
-      mouse,
       raycaster,
       reusableVector3,
       sphericalEnd,
@@ -532,36 +528,34 @@ export default class ComboControls extends EventDispatcher {
     const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
     // find the ray from camera to (x, y)
-    mouse.set(x, y);
     const camera = this.reusableCamera;
     camera.copy(this.camera);
     camera.position.setFromSpherical(sphericalEnd).add(targetEnd);
     camera.lookAt(targetEnd);
-    raycaster.setFromCamera(mouse, camera);
+    raycaster.setFromCamera({ x, y }, camera);
 
     const cameraDirection = reusableVector3;
     camera.getWorldDirection(cameraDirection);
-    let tCamDir = deltaDistance;
-    let radius = distToTarget - tCamDir;
+    let distFromCamDir = deltaDistance;
+    let radius = distToTarget - distFromCamDir;
 
-    // movement along cameraDirection
     if (radius < minDistToTarget) {
       radius = minDistToTarget;
       if (dynamicTarget) {
         // push targetEnd forward
-        targetEnd.add(cameraDirection.normalize().multiplyScalar(tCamDir));
+        targetEnd.add(cameraDirection.normalize().multiplyScalar(distFromCamDir));
       } else {
-        tCamDir = radius - distToTarget;
+        // stops camera from moving forward
+        distFromCamDir = radius - distToTarget;
       }
     }
 
-    // movement along ray
-    const tRay = tCamDir * ratio;
+    const distFromRayOrigin = distFromCamDir * ratio;
 
     sphericalEnd.radius = radius;
 
-    cameraDirection.normalize().multiplyScalar(tCamDir);
-    const rayDir = raycaster.ray.direction.normalize().multiplyScalar(tRay);
+    cameraDirection.normalize().multiplyScalar(distFromCamDir);
+    const rayDir = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
     const targetOffset = rayDir.sub(cameraDirection);
     targetEnd.add(targetOffset);
 
@@ -572,24 +566,6 @@ export default class ComboControls extends EventDispatcher {
     const { sphericalEnd, dollyFactor } = this;
     const factor = dollyIn ? dollyFactor : (1 / dollyFactor);
     return sphericalEnd.radius * (factor - 1);
-  }
-
-  private getZoomDistance = (dollyIn: boolean) => {
-    const { minZoomDistance, maxZoomDistance } = this;
-    const { radius } = this.sphericalEnd;
-    let distance;
-    const near = 2;
-    const far = near * 100;
-    if (radius <= near) {
-      distance = minZoomDistance; //
-    } else if (radius >= far) {
-      distance = maxZoomDistance;
-    } else {
-      const factor = (maxZoomDistance - minZoomDistance) / (far - near);
-      distance = minZoomDistance + factor * (radius - near);
-    }
-
-    return (dollyIn ? 1 : -1) * distance;
   }
 
   private panLeft = (distance: number) => {
