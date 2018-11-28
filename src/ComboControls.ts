@@ -58,8 +58,9 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
-  public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
-  public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
+  public defaultFirstPersonRotationFactor: number = 0.4;
+  public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed;
+  public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed;
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
   public pinchEpsilon: number = 2;
@@ -482,13 +483,13 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
-    const { camera, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    const { camera, defaultFirstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
     reusableCamera.lookAt(targetEnd);
 
-    reusableCamera.rotateX(polarAngle);
-    reusableCamera.rotateY(azimuthAngle);
+    reusableCamera.rotateX(defaultFirstPersonRotationFactor * polarAngle);
+    reusableCamera.rotateY(defaultFirstPersonRotationFactor * azimuthAngle);
 
     const distToTarget = targetEnd.distanceTo(camera.position);
     reusableCamera.getWorldDirection(reusableVector3);
@@ -538,12 +539,12 @@ export default class ComboControls extends EventDispatcher {
     camera.lookAt(targetEnd);
     raycaster.setFromCamera(mouse, camera);
 
-    // movement along cameraDirection
     const cameraDirection = reusableVector3;
     camera.getWorldDirection(cameraDirection);
     let tCamDir = deltaDistance;
     let radius = distToTarget - tCamDir;
 
+    // movement along cameraDirection
     if (radius < minDistToTarget) {
       radius = minDistToTarget;
       if (dynamicTarget) {
