@@ -218,7 +218,7 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) { return; }
     event.preventDefault();
 
-    const { domElement, dollyFactor } = this;
+    const { domElement } = this;
     let { x, y } = getHTMLOffset(
       domElement,
       event.clientX,
@@ -228,7 +228,7 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = event.deltaY < 0;
-    this.dolly(x, y, dollyFactor * this.getDollyDeltaDistance(dollyIn));
+    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
   }
 
   private onTouchStart = (event: TouchEvent) => {
