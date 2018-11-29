@@ -556,8 +556,6 @@ export default class ComboControls extends EventDispatcher {
     const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
     const targetOffset = rayDirection.sub(cameraDirection);
     targetEnd.add(targetOffset);
-
-    return;
   }
 
   private getDollyDeltaDistance = (dollyIn: boolean) => {
