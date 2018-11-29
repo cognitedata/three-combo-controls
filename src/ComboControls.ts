@@ -8,6 +8,7 @@ import {
   Spherical,
   Vector2,
   Vector3,
+  Raycaster,
 } from 'three';
 import Keyboard from './Keyboard';
 
@@ -57,6 +58,7 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
+  public firstPersonRotationFactor: number = 0.4;
   public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
@@ -81,7 +83,8 @@ export default class ComboControls extends EventDispatcher {
 
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
-  private newCameraPosition: Vector3 = new Vector3();
+  private raycaster: Raycaster = new Raycaster();
+
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
     super();
     this.camera = camera;
@@ -216,13 +219,15 @@ export default class ComboControls extends EventDispatcher {
     event.preventDefault();
 
     const { domElement } = this;
-    const { x, y } = getHTMLOffset(
+    let { x, y } = getHTMLOffset(
       domElement,
       event.clientX,
       event.clientY,
     );
+    x = (x / domElement.clientWidth) * 2 - 1;
+    y = (y / domElement.clientHeight) * -2 + 1;
 
-    const dollyIn = event.deltaY < 0;
+    const dollyIn = event.deltaY > 0;
     this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
   }
 
@@ -419,13 +424,13 @@ export default class ComboControls extends EventDispatcher {
     this.firstPersonMode = false;
 
     const speedFactor = keyboard.isPressed('shift') ? defaultSpeedFactor : 1;
-    const forwardMovement = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
-    if (forwardMovement !== undefined) {
-      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(forwardMovement));
+    const moveBackward = keyboard.isPressed('w') ? false : keyboard.isPressed('s') ? true : undefined;
+    if (moveBackward !== undefined) {
+      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(moveBackward));
       this.firstPersonMode = true;
     }
 
-    // pan horizontally
+    // pan
     const horizontalMovement = Number(keyboard.isPressed('a')) - Number(keyboard.isPressed('d'));
     const verticalMovement = Number(keyboard.isPressed('e')) - Number(keyboard.isPressed('q'));
     if (horizontalMovement !== 0 || verticalMovement !== 0) {
@@ -473,13 +478,13 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
-    const { camera, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
     reusableCamera.lookAt(targetEnd);
 
-    reusableCamera.rotateX(polarAngle);
-    reusableCamera.rotateY(azimuthAngle);
+    reusableCamera.rotateX(firstPersonRotationFactor * polarAngle);
+    reusableCamera.rotateY(firstPersonRotationFactor * azimuthAngle);
 
     const distToTarget = targetEnd.distanceTo(camera.position);
     reusableCamera.getWorldDirection(reusableVector3);
@@ -502,19 +507,55 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
-    const { dynamicTarget, minDistance, maxDistance, sphericalEnd, targetEnd, offsetVector, newCameraPosition } = this;
-    const newRadius = sphericalEnd.radius + deltaDistance;
-    if (!dynamicTarget || newRadius >= minDistance) {
-      sphericalEnd.radius = ThreeMath.clamp(newRadius, minDistance, maxDistance);
-      return;
-    }
-    // at this point: dynamic target is enabled and newRadius < this.minDistance
+    const {
+      dynamicTarget,
+      minDistance,
+      raycaster,
+      reusableVector3,
+      sphericalEnd,
+      targetEnd,
+    } = this;
+    const { fov } = this.camera;
+    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - fov * 0.5));
+    const distFromCameraToCursor = Math.sqrt(
+      distFromCameraToScreenCenter * distFromCameraToScreenCenter +
+      x * x +
+      y * y,
+    );
+    const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
+    const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
-    sphericalEnd.radius = newRadius;
-    newCameraPosition.setFromSpherical(sphericalEnd).add(targetEnd);
-    offsetVector.subVectors(targetEnd, newCameraPosition).normalize().multiplyScalar(minDistance);
-    targetEnd.addVectors(newCameraPosition, offsetVector);
-    sphericalEnd.radius = minDistance;
+    // find the ray from camera to (x, y)
+    const camera = this.reusableCamera;
+    camera.copy(this.camera);
+    camera.position.setFromSpherical(sphericalEnd).add(targetEnd);
+    camera.lookAt(targetEnd);
+    raycaster.setFromCamera({ x, y }, camera);
+
+    const cameraDirection = reusableVector3;
+    camera.getWorldDirection(cameraDirection);
+    let distanceFromCameraDirection = deltaDistance;
+    let radius = distToTarget - distanceFromCameraDirection;
+
+    if (radius < minDistance) {
+      radius = minDistance;
+      if (dynamicTarget) {
+        // push targetEnd forward
+        targetEnd.add(cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection));
+      } else {
+        // stops camera from moving forward
+        distanceFromCameraDirection = radius - distToTarget;
+      }
+    }
+
+    const distFromRayOrigin = distanceFromCameraDirection * ratio;
+
+    sphericalEnd.radius = radius;
+
+    cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection);
+    const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
+    const targetOffset = rayDirection.sub(cameraDirection);
+    targetEnd.add(targetOffset);
   }
 
   private getDollyDeltaDistance = (dollyIn: boolean) => {
