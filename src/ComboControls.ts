@@ -227,7 +227,7 @@ export default class ComboControls extends EventDispatcher {
     x = (x / domElement.clientWidth) * 2 - 1;
     y = (y / domElement.clientHeight) * -2 + 1;
 
-    const dollyIn = event.deltaY < 0;
+    const dollyIn = event.deltaY > 0;
     this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
   }
 
