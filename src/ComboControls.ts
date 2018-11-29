@@ -63,7 +63,6 @@ export default class ComboControls extends EventDispatcher {
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
-  public zoomSpeedFactor: number = 4;
   public pinchEpsilon: number = 2;
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
@@ -85,7 +84,6 @@ export default class ComboControls extends EventDispatcher {
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
   private raycaster: Raycaster = new Raycaster();
-  private minDistToTarget: number = 1;
 
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
     super();
@@ -220,7 +218,7 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) { return; }
     event.preventDefault();
 
-    const { domElement, zoomSpeedFactor } = this;
+    const { domElement, dollyFactor } = this;
     let { x, y } = getHTMLOffset(
       domElement,
       event.clientX,
@@ -230,7 +228,7 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = event.deltaY < 0;
-    this.dolly(x, y, zoomSpeedFactor * this.getDollyDeltaDistance(dollyIn));
+    this.dolly(x, y, dollyFactor * this.getDollyDeltaDistance(dollyIn));
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -426,13 +424,13 @@ export default class ComboControls extends EventDispatcher {
     this.firstPersonMode = false;
 
     const speedFactor = keyboard.isPressed('shift') ? defaultSpeedFactor : 1;
-    const forwardMovement = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
-    if (forwardMovement !== undefined) {
-      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(forwardMovement));
+    const moveBackward = keyboard.isPressed('w') ? false : keyboard.isPressed('s') ? true : undefined;
+    if (moveBackward !== undefined) {
+      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(moveBackward));
       this.firstPersonMode = true;
     }
 
-    // pan horizontally
+    // pan
     const horizontalMovement = Number(keyboard.isPressed('a')) - Number(keyboard.isPressed('d'));
     const verticalMovement = Number(keyboard.isPressed('e')) - Number(keyboard.isPressed('q'));
     if (horizontalMovement !== 0 || verticalMovement !== 0) {
@@ -511,7 +509,7 @@ export default class ComboControls extends EventDispatcher {
   private dolly = (x: number, y: number, deltaDistance: number) => {
     const {
       dynamicTarget,
-      minDistToTarget,
+      minDistance,
       raycaster,
       reusableVector3,
       sphericalEnd,
@@ -536,27 +534,27 @@ export default class ComboControls extends EventDispatcher {
 
     const cameraDirection = reusableVector3;
     camera.getWorldDirection(cameraDirection);
-    let distFromCamDir = deltaDistance;
-    let radius = distToTarget - distFromCamDir;
+    let distanceFromCameraDirection = deltaDistance;
+    let radius = distToTarget - distanceFromCameraDirection;
 
-    if (radius < minDistToTarget) {
-      radius = minDistToTarget;
+    if (radius < minDistance) {
+      radius = minDistance;
       if (dynamicTarget) {
         // push targetEnd forward
-        targetEnd.add(cameraDirection.normalize().multiplyScalar(distFromCamDir));
+        targetEnd.add(cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection));
       } else {
         // stops camera from moving forward
-        distFromCamDir = radius - distToTarget;
+        distanceFromCameraDirection = radius - distToTarget;
       }
     }
 
-    const distFromRayOrigin = distFromCamDir * ratio;
+    const distFromRayOrigin = distanceFromCameraDirection * ratio;
 
     sphericalEnd.radius = radius;
 
-    cameraDirection.normalize().multiplyScalar(distFromCamDir);
-    const rayDir = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
-    const targetOffset = rayDir.sub(cameraDirection);
+    cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection);
+    const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
+    const targetOffset = rayDirection.sub(cameraDirection);
     targetEnd.add(targetOffset);
 
     return;
