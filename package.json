@@ -56,5 +56,9 @@
   "peerDependencies": {
     "three": "^0.98.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cognitedata/three-combo-controls.git"
+  },
   "sideEffects": false
 }
