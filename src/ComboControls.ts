@@ -45,7 +45,6 @@ function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
 
 const defaultPointerRotationSpeed = Math.PI / 360; // half degree per pixel
 const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 5;
-const defaultSpeedFactor = 3;
 
 export default class ComboControls extends EventDispatcher {
   public enabled: boolean = true;
@@ -55,7 +54,6 @@ export default class ComboControls extends EventDispatcher {
   public minDistance: number = 1;
   public maxDistance: number = Infinity;
   public dollyFactor: number = 0.98;
-  public keyboardPanSpeed: number = 10;
   public minPolarAngle: number = 0; // radians
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
@@ -65,6 +63,9 @@ export default class ComboControls extends EventDispatcher {
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
+  public keyboardDollySpeed: number = 2;
+  public keyboardPanSpeed: number = 10;
+  public keyboardSpeedFactor: number = 3; // how much quicker keyboard navigation will be with 'shift' pressed
   public pinchEpsilon: number = 2;
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
@@ -434,14 +435,14 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled) { return; }
 
-    const { keyboard, keyboardPanSpeed } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     this.firstPersonMode = false;
 
-    const speedFactor = keyboard.isPressed('shift') ? defaultSpeedFactor : 1;
+    const speedFactor = keyboard.isPressed('shift') ? keyboardSpeedFactor : 1;
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
-      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(moveForward));
+      this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
       this.firstPersonMode = true;
     }
 
