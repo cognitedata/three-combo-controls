@@ -12,6 +12,8 @@ import {
 } from 'three';
 import Keyboard from './Keyboard';
 
+const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1;
+
 function getHTMLOffset(
   domElement: HTMLElement,
   clientX: number,
@@ -218,6 +220,19 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) { return; }
     event.preventDefault();
 
+    let delta = 0;
+    if (event.wheelDelta) {
+      // WebKit / Opera / Explorer 9
+      delta = -event.wheelDelta / 40;
+    } else if (event.detail) {
+      // Firefox
+      delta = event.detail;
+    } else if (event.deltaY) {
+      // Firefox / Explorer + event target is SVG.
+      const factor = isFirefox ? 1 : 40;
+      delta = event.deltaY / factor;
+    }
+
     const { domElement } = this;
     let { x, y } = getHTMLOffset(
       domElement,
@@ -227,8 +242,8 @@ export default class ComboControls extends EventDispatcher {
     x = (x / domElement.clientWidth) * 2 - 1;
     y = (y / domElement.clientHeight) * -2 + 1;
 
-    const dollyIn = event.deltaY < 0;
-    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
+    const dollyIn = delta < 0;
+    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn, Math.abs(delta)));
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -558,9 +573,10 @@ export default class ComboControls extends EventDispatcher {
     targetEnd.add(targetOffset);
   }
 
-  private getDollyDeltaDistance = (dollyIn: boolean) => {
+  private getDollyDeltaDistance = (dollyIn: boolean, steps: number = 1) => {
     const { sphericalEnd, dollyFactor } = this;
-    const factor = dollyIn ? dollyFactor : (1 / dollyFactor);
+    const zoomFactor = dollyFactor ** steps;
+    const factor = dollyIn ? zoomFactor : (1 / zoomFactor);
     return sphericalEnd.radius * (factor - 1);
   }
 
