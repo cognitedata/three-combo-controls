@@ -68,6 +68,7 @@ controls.maxPolarAngle = Math.PI; // maximum polar angle around the target (radi
 controls.minAzimuthAngle = -Infinity; // minimum azimuth angle around the target (radians)
 controls.maxAzimuthAngle = Infinity; // maximum azimuth angle around the target (radians)
 
+controls.enableKeyboardNavigation = true; // enable / disable keyboard navigation
 controls.keyboardDollySpeed = 2; // using keyboard ('W' & 'S') will zoom equal to keyboardDollySpeed mouse wheel events
 controls.keyboardPanSpeed = 10; // using keyboard ('A' & 'D') to pan will be equal to keyboardPanSpeed pixels mouse pan
 controls.keyboardSpeedFactor = 3; // speed factor for keyboard navigation (pan & zoom) when 'shift' key is pressed

@@ -61,6 +61,7 @@ export default class ComboControls extends EventDispatcher {
   public firstPersonRotationFactor: number = 0.4;
   public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
+  public enableKeyboardNavigation: boolean = true;
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
   public keyboardDollySpeed: number = 2;
@@ -433,7 +434,7 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private handleKeyboard = () => {
-    if (!this.enabled) { return; }
+    if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
     const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
