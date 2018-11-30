@@ -227,7 +227,7 @@ export default class ComboControls extends EventDispatcher {
     x = (x / domElement.clientWidth) * 2 - 1;
     y = (y / domElement.clientHeight) * -2 + 1;
 
-    const dollyIn = event.deltaY > 0;
+    const dollyIn = event.deltaY < 0;
     this.dolly(x, y, this.getDollyDeltaDistance(dollyIn));
   }
 
@@ -533,28 +533,28 @@ export default class ComboControls extends EventDispatcher {
     raycaster.setFromCamera({ x, y }, camera);
 
     const cameraDirection = reusableVector3;
-    camera.getWorldDirection(cameraDirection);
-    let distanceFromCameraDirection = deltaDistance;
-    let radius = distToTarget - distanceFromCameraDirection;
+    let radius = distToTarget + deltaDistance;
 
     if (radius < minDistance) {
       radius = minDistance;
       if (dynamicTarget) {
         // push targetEnd forward
-        targetEnd.add(cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection));
+        camera.getWorldDirection(cameraDirection);
+        targetEnd.add(cameraDirection.normalize().multiplyScalar(Math.abs(deltaDistance)));
       } else {
         // stops camera from moving forward
-        distanceFromCameraDirection = radius - distToTarget;
+        deltaDistance = distToTarget - radius;
       }
     }
 
-    const distFromRayOrigin = distanceFromCameraDirection * ratio;
+    const distFromRayOrigin = -deltaDistance * ratio;
 
     sphericalEnd.radius = radius;
 
-    cameraDirection.normalize().multiplyScalar(distanceFromCameraDirection);
+    camera.getWorldDirection(cameraDirection);
+    cameraDirection.normalize().multiplyScalar(deltaDistance);
     const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
-    const targetOffset = rayDirection.sub(cameraDirection);
+    const targetOffset = rayDirection.add(cameraDirection);
     targetEnd.add(targetOffset);
   }
 
