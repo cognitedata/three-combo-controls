@@ -52,9 +52,8 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "dependencies": {},
   "peerDependencies": {
-    "three": "^0.98.0"
+    "three": ">=0.82.0"
   },
   "repository": {
     "type": "git",
