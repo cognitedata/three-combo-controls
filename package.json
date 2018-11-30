@@ -9,8 +9,13 @@
   ],
   "author": "Fredrik Anfinsen (fredrik.anfinsen@cognite.com)",
   "license": "Apache-2.0",
+  "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/main.js",
+    "dist/main.js.map",
+    "dist/Keyboard.d.ts",
+    "dist/index.d.ts",
+    "dist/ComboControls.d.ts"
   ],
   "keywords": [
     "cognite",
