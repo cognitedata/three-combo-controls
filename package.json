@@ -1,8 +1,12 @@
 {
   "name": "three-combo-controls",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Orbit & first person camera controller for THREE.JS",
   "browser": "dist/index.js",
+  "contributors": [
+    "Fredrik Anfinsen <fredrik.anfinsen@cognite.com>",
+    "Haowei Guo <haowei.guo@cognite.com>"
+  ],
   "author": "Fredrik Anfinsen (fredrik.anfinsen@cognite.com)",
   "license": "Apache-2.0",
   "files": [
@@ -15,8 +19,10 @@
     "orbit",
     "camera",
     "controls",
+    "controller",
     "combo",
     "three.js",
+    "threejs",
     "typescript"
   ],
   "scripts": {
@@ -46,9 +52,12 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "dependencies": {},
   "peerDependencies": {
-    "three": "^0.98.0"
+    "three": ">=0.82.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cognitedata/three-combo-controls.git"
   },
   "sideEffects": false
 }
