@@ -424,9 +424,9 @@ export default class ComboControls extends EventDispatcher {
     this.firstPersonMode = false;
 
     const speedFactor = keyboard.isPressed('shift') ? defaultSpeedFactor : 1;
-    const moveBackward = keyboard.isPressed('w') ? false : keyboard.isPressed('s') ? true : undefined;
-    if (moveBackward !== undefined) {
-      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(moveBackward));
+    const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
+    if (moveForward !== undefined) {
+      this.dolly(0, 0, speedFactor * this.getDollyDeltaDistance(moveForward));
       this.firstPersonMode = true;
     }
 
