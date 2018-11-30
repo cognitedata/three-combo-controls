@@ -23,6 +23,7 @@ module.exports = merge(common, {
       filename: 'index.html',
       template: path.resolve('src/examples/index.html'),
       inject: 'body',
+      chunks: ['example'],
     }),
   ],
 });
