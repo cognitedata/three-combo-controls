@@ -88,6 +88,8 @@ export default class ComboControls extends EventDispatcher {
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
   private raycaster: Raycaster = new Raycaster();
+  private targetFPS: number = 60;
+  private targetFPSOverActualFPS: number = 1;
 
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
     super();
@@ -111,7 +113,7 @@ export default class ComboControls extends EventDispatcher {
     };
   }
 
-  public update = (): boolean => {
+  public update = (deltaTime: number): boolean => {
     const {
       camera,
       target,
@@ -122,8 +124,14 @@ export default class ComboControls extends EventDispatcher {
       handleKeyboard,
       enableDamping,
       dampingFactor,
+      targetFPSOverActualFPS,
       EPSILON,
+      targetFPS,
     } = this;
+
+    // the target framerate
+    const actualFPS = Math.min(1 / deltaTime, targetFPS);
+    this.targetFPSOverActualFPS = targetFPS / actualFPS;
 
     handleKeyboard();
 
@@ -134,7 +142,8 @@ export default class ComboControls extends EventDispatcher {
 
     let changed = false;
 
-    const deltaFactor = (enableDamping && !this.temporarilyDisableDamping) ? dampingFactor : 1;
+    const wantDamping = enableDamping && !this.temporarilyDisableDamping;
+    const deltaFactor = wantDamping ? Math.min(dampingFactor * targetFPSOverActualFPS) : 1;
     this.temporarilyDisableDamping = false;
 
     if (
@@ -183,7 +192,7 @@ export default class ComboControls extends EventDispatcher {
     this.sphericalEnd.setFromVector3(offset);
     this.target.copy(this.targetEnd);
     this.spherical.copy(this.sphericalEnd);
-    this.update();
+    this.update(1000 / this.targetFPS);
     this.triggerCameraChangeEvent();
   }
 
@@ -286,9 +295,12 @@ export default class ComboControls extends EventDispatcher {
         event.clientX,
         event.clientY,
       );
+      const speedFactor = this.firstPersonRotationFactor;
       const azimuthAngle =
+        speedFactor *
         (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
       const polarAngle =
+        speedFactor *
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
       if (this.firstPersonMode) {
@@ -321,10 +333,11 @@ export default class ComboControls extends EventDispatcher {
         event.clientX,
         event.clientY,
       );
+      const speedFactor = this.targetFPSOverActualFPS;
       const xDifference = newOffset.x - previousOffset.x;
       const yDifference = newOffset.y - previousOffset.y;
       previousOffset = newOffset;
-      this.pan(xDifference, yDifference);
+      this.pan(speedFactor * xDifference, speedFactor * yDifference);
     };
 
     const onMouseUp = () => {
@@ -352,9 +365,12 @@ export default class ComboControls extends EventDispatcher {
         event.touches[0].clientX,
         event.touches[0].clientY,
       );
+      const speedFactor = this.targetFPSOverActualFPS;
       const azimuthAngle =
+        speedFactor *
         (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
       const polarAngle =
+        speedFactor *
         (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
       previousOffset = newOffset;
       if (this.firstPersonMode) {
@@ -406,7 +422,8 @@ export default class ComboControls extends EventDispatcher {
       const deltaCenter = pinchInfo.center.clone().sub(previousPinchInfo.center);
       if (deltaCenter.length() > this.pinchEpsilon) {
         deltaCenter.multiplyScalar(this.pinchPanSpeed);
-        this.pan(deltaCenter.x, deltaCenter.y);
+        const speedFactor = this.targetFPSOverActualFPS;
+        this.pan(speedFactor * deltaCenter.x, speedFactor * deltaCenter.y);
       }
       previousPinchInfo = pinchInfo;
     };
@@ -436,13 +453,15 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
-    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor, targetFPSOverActualFPS } = this;
 
     // rotate
     const azimuthAngle =
+      targetFPSOverActualFPS *
       this.keyboardRotationSpeedAzimuth *
       (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
     let polarAngle =
+      targetFPSOverActualFPS *
       this.keyboardRotationSpeedPolar *
       (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
@@ -458,7 +477,7 @@ export default class ComboControls extends EventDispatcher {
 
     this.firstPersonMode = false;
 
-    const speedFactor = keyboard.isPressed('shift') ? keyboardSpeedFactor : 1;
+    const speedFactor = targetFPSOverActualFPS * (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
       this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
