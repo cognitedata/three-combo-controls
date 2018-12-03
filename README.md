@@ -56,7 +56,7 @@ controls.addEventListener('cameraChange', (event) => {
 // options with default values
 controls.enabled = true; // enable / disable all interactions
 controls.enableDamping = true; // enable / disable smooth transitions
-controls.dampingFactor = 0.1; // smooth transition factor (<= 1). Move (targetState - currentState) * dampingFactor for each `controls.update` call
+controls.dampingFactor = 0.2; // smooth transition factor (<= 1). Move (targetState - currentState) * dampingFactor for each `controls.update` call
 controls.dynamicTarget = false; // possible to zoom past the target (will move the target if you are closer than minDistance to the target)
 controls.dollyFactor = 0.98; // zoom factor (when zooming one step the distance to the target will be distance = oldDistance * dollyFactor)
 
@@ -79,8 +79,8 @@ controls.pinchEpsilon = 2; // minimum pixels change for pinch (touch & pan) to t
 controls.pointerRotationSpeedPolar = Math.PI / 360; // rotation speed for touch in radians per pixel
 controls.pointerRotationSpeedAzimuth = Math.PI / 360; // rotation speed for touch in radians per pixel
 
-controls.keyboardRotationSpeedAzimuth = 5 * Math.PI / 360; // rotation speed for keyboard first person mode (arrow-keys).
-controls.keyboardRotationSpeedPolar = 5 * Math.PI / 360; // rotation speed for keyboard first person mode (arrow-keys).
+controls.keyboardRotationSpeedAzimuth = 10 * Math.PI / 360; // rotation speed for keyboard first person mode (arrow-keys).
+controls.keyboardRotationSpeedPolar = 10 * Math.PI / 360; // rotation speed for keyboard first person mode (arrow-keys).
 ```
 
 ## License
