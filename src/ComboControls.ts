@@ -44,12 +44,12 @@ function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
 }
 
 const defaultPointerRotationSpeed = Math.PI / 360; // half degree per pixel
-const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 5;
+const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 10;
 
 export default class ComboControls extends EventDispatcher {
   public enabled: boolean = true;
   public enableDamping: boolean = true;
-  public dampingFactor: number = 0.1;
+  public dampingFactor: number = 0.2;
   public dynamicTarget: boolean = true;
   public minDistance: number = 1;
   public maxDistance: number = Infinity;
