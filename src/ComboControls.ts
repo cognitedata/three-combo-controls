@@ -438,6 +438,24 @@ export default class ComboControls extends EventDispatcher {
 
     const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
+    // rotate
+    const azimuthAngle =
+      this.keyboardRotationSpeedAzimuth *
+      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
+    let polarAngle =
+      this.keyboardRotationSpeedPolar *
+      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
+    if (azimuthAngle !== 0 || polarAngle !== 0) {
+      this.temporarilyDisableDamping = true;
+      const { sphericalEnd } = this;
+      const oldPhi = sphericalEnd.phi;
+      sphericalEnd.phi += polarAngle;
+      sphericalEnd.makeSafe();
+      polarAngle = sphericalEnd.phi - oldPhi;
+      sphericalEnd.phi = oldPhi;
+      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+    }
+
     this.firstPersonMode = false;
 
     const speedFactor = keyboard.isPressed('shift') ? keyboardSpeedFactor : 1;
@@ -456,24 +474,6 @@ export default class ComboControls extends EventDispatcher {
         speedFactor * keyboardPanSpeed * verticalMovement,
       );
       this.firstPersonMode = true;
-    }
-
-    // rotate
-    const azimuthAngle =
-      this.keyboardRotationSpeedAzimuth *
-      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
-    let polarAngle =
-      this.keyboardRotationSpeedPolar *
-      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
-    if (azimuthAngle !== 0 || polarAngle !== 0) {
-      this.temporarilyDisableDamping = true;
-      const { sphericalEnd } = this;
-      const oldPhi = sphericalEnd.phi;
-      sphericalEnd.phi += polarAngle;
-      sphericalEnd.makeSafe();
-      polarAngle = sphericalEnd.phi - oldPhi;
-      sphericalEnd.phi = oldPhi;
-      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
     }
   }
 
