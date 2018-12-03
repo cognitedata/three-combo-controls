@@ -44,12 +44,12 @@ function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
 }
 
 const defaultPointerRotationSpeed = Math.PI / 360; // half degree per pixel
-const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 5;
+const defaultKeyboardRotationSpeed = defaultPointerRotationSpeed * 10;
 
 export default class ComboControls extends EventDispatcher {
   public enabled: boolean = true;
   public enableDamping: boolean = true;
-  public dampingFactor: number = 0.1;
+  public dampingFactor: number = 0.2;
   public dynamicTarget: boolean = true;
   public minDistance: number = 1;
   public maxDistance: number = Infinity;
@@ -438,6 +438,24 @@ export default class ComboControls extends EventDispatcher {
 
     const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
+    // rotate
+    const azimuthAngle =
+      this.keyboardRotationSpeedAzimuth *
+      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
+    let polarAngle =
+      this.keyboardRotationSpeedPolar *
+      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
+    if (azimuthAngle !== 0 || polarAngle !== 0) {
+      this.temporarilyDisableDamping = true;
+      const { sphericalEnd } = this;
+      const oldPhi = sphericalEnd.phi;
+      sphericalEnd.phi += polarAngle;
+      sphericalEnd.makeSafe();
+      polarAngle = sphericalEnd.phi - oldPhi;
+      sphericalEnd.phi = oldPhi;
+      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+    }
+
     this.firstPersonMode = false;
 
     const speedFactor = keyboard.isPressed('shift') ? keyboardSpeedFactor : 1;
@@ -456,24 +474,6 @@ export default class ComboControls extends EventDispatcher {
         speedFactor * keyboardPanSpeed * verticalMovement,
       );
       this.firstPersonMode = true;
-    }
-
-    // rotate
-    const azimuthAngle =
-      this.keyboardRotationSpeedAzimuth *
-      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
-    let polarAngle =
-      this.keyboardRotationSpeedPolar *
-      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
-    if (azimuthAngle !== 0 || polarAngle !== 0) {
-      this.temporarilyDisableDamping = true;
-      const { sphericalEnd } = this;
-      const oldPhi = sphericalEnd.phi;
-      sphericalEnd.phi += polarAngle;
-      sphericalEnd.makeSafe();
-      polarAngle = sphericalEnd.phi - oldPhi;
-      sphericalEnd.phi = oldPhi;
-      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
     }
   }
 
