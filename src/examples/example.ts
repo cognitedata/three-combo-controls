@@ -3,7 +3,6 @@ import ComboControls from '../';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
-const clock = new THREE.Clock();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
 camera.position.set(0, 0, 5);
@@ -39,9 +38,9 @@ scene.add(gridHelper);
 
 renderer.render(scene, camera);
 
+const clock = new THREE.Clock();
 (function anim() {
-  const delta = clock.getDelta();
-  cameraControls.update();
+  cameraControls.update(clock.getDelta());
   requestAnimationFrame(anim);
   renderer.render(scene, camera);
 })();

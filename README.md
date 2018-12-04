@@ -20,11 +20,13 @@ $ yarn add @cognite/three-combo-controls
 ```js
 
 import ComboControls from '@cognite/three-combo-controls';
+import * as THREE from 'three';
 
 const controls = new ComboControls(camera, domElement);
+const clock = new THREE.Clock();
 
 function animate() {
-  controls.update();
+  controls.update(clock.getDelta());
   // ...
 }
 ```
