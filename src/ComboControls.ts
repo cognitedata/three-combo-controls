@@ -88,7 +88,7 @@ export default class ComboControls extends EventDispatcher {
   private offsetVector: Vector3 = new Vector3();
   private panVector: Vector3 = new Vector3();
   private raycaster: Raycaster = new Raycaster();
-  private targetFPS: number = 60;
+  private targetFPS: number = 30;
   private targetFPSOverActualFPS: number = 1;
 
   constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
