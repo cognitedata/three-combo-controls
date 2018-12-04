@@ -333,11 +333,10 @@ export default class ComboControls extends EventDispatcher {
         event.clientX,
         event.clientY,
       );
-      const speedFactor = this.targetFPSOverActualFPS;
       const xDifference = newOffset.x - previousOffset.x;
       const yDifference = newOffset.y - previousOffset.y;
       previousOffset = newOffset;
-      this.pan(speedFactor * xDifference, speedFactor * yDifference);
+      this.pan(xDifference, yDifference);
     };
 
     const onMouseUp = () => {
@@ -422,8 +421,7 @@ export default class ComboControls extends EventDispatcher {
       const deltaCenter = pinchInfo.center.clone().sub(previousPinchInfo.center);
       if (deltaCenter.length() > this.pinchEpsilon) {
         deltaCenter.multiplyScalar(this.pinchPanSpeed);
-        const speedFactor = this.targetFPSOverActualFPS;
-        this.pan(speedFactor * deltaCenter.x, speedFactor * deltaCenter.y);
+        this.pan(deltaCenter.x, deltaCenter.y);
       }
       previousPinchInfo = pinchInfo;
     };
@@ -477,7 +475,7 @@ export default class ComboControls extends EventDispatcher {
 
     this.firstPersonMode = false;
 
-    const speedFactor = targetFPSOverActualFPS * (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
+    const speedFactor = (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
       this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
