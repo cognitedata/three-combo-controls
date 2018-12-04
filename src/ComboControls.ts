@@ -4,11 +4,12 @@ import {
   EventDispatcher,
   Math as ThreeMath,
   MOUSE,
-  PerspectiveCamera,
   Spherical,
   Vector2,
   Vector3,
   Raycaster,
+  Camera,
+  PerspectiveCamera,
 } from 'three';
 import Keyboard from './Keyboard';
 
@@ -73,9 +74,9 @@ export default class ComboControls extends EventDispatcher {
   public dispose: () => void;
 
   private temporarilyDisableDamping: Boolean = false;
-  private camera: PerspectiveCamera;
+  private camera: Camera;
   private firstPersonMode: Boolean = false;
-  private reusableCamera: PerspectiveCamera = new PerspectiveCamera();
+  private reusableCamera: any;
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
   private target: Vector3 = new Vector3();
@@ -91,9 +92,10 @@ export default class ComboControls extends EventDispatcher {
   private targetFPS: number = 30;
   private targetFPSOverActualFPS: number = 1;
 
-  constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
+  constructor(camera: Camera, domElement: HTMLElement) {
     super();
     this.camera = camera;
+    this.reusableCamera = camera.clone();
     this.domElement = domElement;
 
     // rotation
@@ -528,7 +530,10 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    if (this.camera instanceof PerspectiveCamera) {
+      // @ts-ignore
+      targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    }
 
     // we actually don't use screenWidth, since perspective camera is fixed to screen height
     this.panLeft((2 * deltaX * targetDistance) / domElement.clientHeight);
@@ -544,8 +549,15 @@ export default class ComboControls extends EventDispatcher {
       sphericalEnd,
       targetEnd,
     } = this;
-    const { fov } = this.camera;
-    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - fov * 0.5));
+    let distFromCameraToScreenCenter;
+    if (this.camera instanceof PerspectiveCamera) {
+      // half of the fov is center to top of screen
+      // @ts-ignore
+      distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - this.camera.fov * 0.5));
+    } else {
+      distFromCameraToScreenCenter = 1;
+    }
+
     const distFromCameraToCursor = Math.sqrt(
       distFromCameraToScreenCenter * distFromCameraToScreenCenter +
       x * x +

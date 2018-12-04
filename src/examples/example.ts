@@ -4,7 +4,8 @@ import ComboControls from '../';
 const width = window.innerWidth;
 const height = window.innerHeight;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
+// const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
+const camera = new THREE.OrthographicCamera(-width / height, width / height, 1 , -1, 0.01, 100);
 camera.position.set(0, 0, 5);
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
@@ -28,7 +29,7 @@ const targetMesh = new THREE.Mesh(
 scene.add(targetMesh);
 
 cameraControls.addEventListener('cameraChange', (event) => {
-  const { position, target } = event.camera;
+  const { target } = event.camera;
   targetMesh.position.copy(target);
 });
 
