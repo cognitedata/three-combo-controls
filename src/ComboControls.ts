@@ -281,6 +281,23 @@ export default class ComboControls extends EventDispatcher {
     event.preventDefault();
   }
 
+  private rotate = (deltaX: number, deltaY: number) => {
+    const speedFactor = this.targetFPSOverActualFPS;
+    const azimuthAngle =
+      speedFactor *
+      (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) *
+      deltaX;
+    const polarAngle =
+      speedFactor *
+      (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) *
+      deltaY;
+    if (this.firstPersonMode) {
+      this.rotateFirstPersonMode(azimuthAngle, polarAngle);
+    } else {
+      this.rotateSpherical(azimuthAngle, polarAngle);
+    }
+  }
+
   private startMouseRotation = (initialEvent: MouseEvent) => {
     const { domElement } = this;
     let previousOffset = getHTMLOffset(
@@ -295,19 +312,8 @@ export default class ComboControls extends EventDispatcher {
         event.clientX,
         event.clientY,
       );
-      const speedFactor = this.firstPersonRotationFactor;
-      const azimuthAngle =
-        speedFactor *
-        (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
-      const polarAngle =
-        speedFactor *
-        (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
+      this.rotate(previousOffset.x - newOffset.x, previousOffset.y - newOffset.y);
       previousOffset = newOffset;
-      if (this.firstPersonMode) {
-        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
-      } else {
-        this.rotate(azimuthAngle, polarAngle);
-      }
     };
 
     const onMouseUp = () => {
@@ -364,19 +370,8 @@ export default class ComboControls extends EventDispatcher {
         event.touches[0].clientX,
         event.touches[0].clientY,
       );
-      const speedFactor = this.targetFPSOverActualFPS;
-      const azimuthAngle =
-        speedFactor *
-        (previousOffset.x - newOffset.x) * this.pointerRotationSpeedAzimuth;
-      const polarAngle =
-        speedFactor *
-        (previousOffset.y - newOffset.y) * this.pointerRotationSpeedPolar;
+      this.rotate(previousOffset.x - newOffset.x, previousOffset.y - newOffset.y);
       previousOffset = newOffset;
-      if (this.firstPersonMode) {
-        this.rotateFirstPersonMode(azimuthAngle, polarAngle);
-      } else {
-        this.rotate(azimuthAngle, polarAngle);
-      }
     };
 
     const onTouchStart = (event: TouchEvent) => {
@@ -494,7 +489,7 @@ export default class ComboControls extends EventDispatcher {
     }
   }
 
-  private rotate = (azimuthAngle: number, polarAngle: number) => {
+  private rotateSpherical = (azimuthAngle: number, polarAngle: number) => {
     const { sphericalEnd } = this;
     const theta = ThreeMath.clamp(
       sphericalEnd.theta + azimuthAngle,
