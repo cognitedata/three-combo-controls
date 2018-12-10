@@ -77,7 +77,7 @@ export default class ComboControls extends EventDispatcher {
   public maxZoom: number = Infinity;
 
   private temporarilyDisableDamping: Boolean = false;
-  private camera: Camera;
+  private camera: PerspectiveCamera | OrthographicCamera;
   private firstPersonMode: Boolean = false;
   private reusableCamera: any;
   private reusableVector3: Vector3 = new Vector3();
@@ -95,7 +95,7 @@ export default class ComboControls extends EventDispatcher {
   private targetFPS: number = 30;
   private targetFPSOverActualFPS: number = 1;
 
-  constructor(camera: Camera, domElement: HTMLElement) {
+  constructor(camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
     super();
     this.camera = camera;
     this.reusableCamera = camera.clone();
@@ -259,7 +259,10 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = delta < 0;
-    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn, Math.abs(delta)));
+    const deltaDistance = this.camera instanceof PerspectiveCamera ?
+      this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
+      Math.sign(delta) * 0.3;
+    this.dolly(x, y, deltaDistance);
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -543,8 +546,9 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
-    const camera: any = this.camera;
-    camera.zoom += deltaDistance;
+    // @ts-ignore
+    const camera: OrthographicCamera = this.camera;
+    camera.zoom *= 1 - deltaDistance;
     camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
     camera.updateProjectionMatrix();
   }

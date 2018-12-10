@@ -12,7 +12,8 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "sourceMap": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "lib": ["es5", "dom", "es2015.core"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
