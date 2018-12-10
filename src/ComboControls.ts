@@ -533,8 +533,7 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    if (this.camera instanceof PerspectiveCamera) {
-      // @ts-ignore
+    if (camera instanceof PerspectiveCamera) {
       targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
     }
 
@@ -544,12 +543,9 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
-    const { camera } = this;
-    // @ts-ignore
+    const camera: any = this.camera;
     camera.zoom += deltaDistance;
-    // @ts-ignore
     camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
-    // @ts-ignore
     camera.updateProjectionMatrix();
   }
 
