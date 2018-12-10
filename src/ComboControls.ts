@@ -10,6 +10,7 @@ import {
   Raycaster,
   Camera,
   PerspectiveCamera,
+  OrthographicCamera,
 } from 'three';
 import Keyboard from './Keyboard';
 
@@ -540,7 +541,17 @@ export default class ComboControls extends EventDispatcher {
     this.panUp((2 * deltaY * targetDistance) / domElement.clientHeight);
   }
 
-  private dolly = (x: number, y: number, deltaDistance: number) => {
+  private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
+    const { camera } = this;
+    // @ts-ignore
+    camera.zoom += deltaDistance;
+    // @ts-ignore
+    camera.zoom = ThreeMath.clamp(camera.zoom, 0, Infinity);
+    // @ts-ignore
+    camera.updateProjectionMatrix();
+  }
+
+  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number) => {
     const {
       dynamicTarget,
       minDistance,
@@ -548,16 +559,12 @@ export default class ComboControls extends EventDispatcher {
       reusableVector3,
       sphericalEnd,
       targetEnd,
+      camera,
+      reusableCamera,
     } = this;
-    let distFromCameraToScreenCenter;
-    if (this.camera instanceof PerspectiveCamera) {
-      // half of the fov is center to top of screen
-      // @ts-ignore
-      distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - this.camera.fov * 0.5));
-    } else {
-      distFromCameraToScreenCenter = 1;
-    }
 
+    // @ts-ignore
+    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - camera.fov * 0.5));
     const distFromCameraToCursor = Math.sqrt(
       distFromCameraToScreenCenter * distFromCameraToScreenCenter +
       x * x +
@@ -566,12 +573,10 @@ export default class ComboControls extends EventDispatcher {
     const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
     const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
-    // find the ray from camera to (x, y)
-    const camera = this.reusableCamera;
-    camera.copy(this.camera);
-    camera.position.setFromSpherical(sphericalEnd).add(targetEnd);
-    camera.lookAt(targetEnd);
-    raycaster.setFromCamera({ x, y }, camera);
+    reusableCamera.copy(camera);
+    reusableCamera.position.setFromSpherical(sphericalEnd).add(targetEnd);
+    reusableCamera.lookAt(targetEnd);
+    raycaster.setFromCamera({ x, y }, reusableCamera);
 
     const cameraDirection = reusableVector3;
     let radius = distToTarget + deltaDistance;
@@ -580,7 +585,7 @@ export default class ComboControls extends EventDispatcher {
       radius = minDistance;
       if (dynamicTarget) {
         // push targetEnd forward
-        camera.getWorldDirection(cameraDirection);
+        reusableCamera.getWorldDirection(cameraDirection);
         targetEnd.add(cameraDirection.normalize().multiplyScalar(Math.abs(deltaDistance)));
       } else {
         // stops camera from moving forward
@@ -592,11 +597,19 @@ export default class ComboControls extends EventDispatcher {
 
     sphericalEnd.radius = radius;
 
-    camera.getWorldDirection(cameraDirection);
+    reusableCamera.getWorldDirection(cameraDirection);
     cameraDirection.normalize().multiplyScalar(deltaDistance);
     const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
     const targetOffset = rayDirection.add(cameraDirection);
     targetEnd.add(targetOffset);
+  }
+
+  private dolly = (x: number, y: number, deltaDistance: number) => {
+    if (this.camera instanceof OrthographicCamera) {
+      this.dollyOrthographicCamera(x, y, deltaDistance);
+    } else {
+      this.dollyPerspectiveCamera(x, y, deltaDistance);
+    }
   }
 
   private getDollyDeltaDistance = (dollyIn: boolean, steps: number = 1) => {
