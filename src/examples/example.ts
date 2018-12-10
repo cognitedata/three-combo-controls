@@ -1,11 +1,20 @@
 import * as THREE from 'three';
 import ComboControls from '../';
+declare var require: any;
+const queryString = require('query-string');
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 const scene = new THREE.Scene();
-// const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
-const camera = new THREE.OrthographicCamera(-width / height, width / height, 1 , -1, -1000, 1000);
+
+const wantOrthographic = queryString.parse(location.search).orthographic !== undefined;
+let camera;
+if (wantOrthographic) {
+  camera = new THREE.OrthographicCamera(-width / height, width / height, 1 , -1, -1000, 1000);
+} else {
+  camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 100);
+}
+
 camera.position.set(0, 0, 5);
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
