@@ -73,6 +73,8 @@ export default class ComboControls extends EventDispatcher {
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
   public dispose: () => void;
+  public minZoom: number = 0;
+  public maxZoom: number = Infinity;
 
   private temporarilyDisableDamping: Boolean = false;
   private camera: Camera;
@@ -546,7 +548,7 @@ export default class ComboControls extends EventDispatcher {
     // @ts-ignore
     camera.zoom += deltaDistance;
     // @ts-ignore
-    camera.zoom = ThreeMath.clamp(camera.zoom, 0, Infinity);
+    camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
     // @ts-ignore
     camera.updateProjectionMatrix();
   }
