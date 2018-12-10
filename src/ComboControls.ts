@@ -79,7 +79,7 @@ export default class ComboControls extends EventDispatcher {
   private temporarilyDisableDamping: Boolean = false;
   private camera: PerspectiveCamera | OrthographicCamera;
   private firstPersonMode: Boolean = false;
-  private reusableCamera: any;
+  private reusableCamera: PerspectiveCamera | OrthographicCamera;
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
   private target: Vector3 = new Vector3();
@@ -516,6 +516,7 @@ export default class ComboControls extends EventDispatcher {
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
     const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    // @ts-ignore
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
     reusableCamera.lookAt(targetEnd);
@@ -546,8 +547,7 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
-    // @ts-ignore
-    const camera: OrthographicCamera = this.camera;
+    const camera = this.camera as OrthographicCamera;
     camera.zoom *= 1 - deltaDistance;
     camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
     camera.updateProjectionMatrix();
@@ -565,8 +565,7 @@ export default class ComboControls extends EventDispatcher {
       reusableCamera,
     } = this;
 
-    // @ts-ignore
-    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - camera.fov * 0.5));
+    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - (camera as PerspectiveCamera).fov * 0.5));
     const distFromCameraToCursor = Math.sqrt(
       distFromCameraToScreenCenter * distFromCameraToScreenCenter +
       x * x +
@@ -575,6 +574,7 @@ export default class ComboControls extends EventDispatcher {
     const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
     const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
+    // @ts-ignore
     reusableCamera.copy(camera);
     reusableCamera.position.setFromSpherical(sphericalEnd).add(targetEnd);
     reusableCamera.lookAt(targetEnd);
