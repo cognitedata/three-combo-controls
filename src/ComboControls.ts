@@ -259,7 +259,8 @@ export default class ComboControls extends EventDispatcher {
 
     const dollyIn = delta < 0;
     const deltaDistance =
-      this.camera.constructor.name === 'PerspectiveCamera' ?
+      // @ts-ignore
+      this.camera.isPerspectiveCamera === 'PerspectiveCamera' ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
@@ -532,7 +533,8 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    if (camera.constructor.name === 'PerspectiveCamera') {
+    // @ts-ignore
+    if (camera.isPerspectiveCamera) {
       targetDistance *= Math.tan((((camera as PerspectiveCamera).fov / 2) * Math.PI) / 180);
     }
 
@@ -602,9 +604,12 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
-    if (this.camera.constructor.name === 'OrthographicCamera') {
+    const { camera } = this;
+    // @ts-ignore
+    if (camera.isOrthographicCamera) {
       this.dollyOrthographicCamera(x, y, deltaDistance);
-    } else {
+    // @ts-ignore
+    } else if (camera.isPerspectiveCamera) {
       this.dollyPerspectiveCamera(x, y, deltaDistance);
     }
   }
