@@ -129,7 +129,6 @@ export default class ComboControls extends EventDispatcher {
       handleKeyboard,
       enableDamping,
       dampingFactor,
-      targetFPSOverActualFPS,
       EPSILON,
       targetFPS,
     } = this;
@@ -148,7 +147,7 @@ export default class ComboControls extends EventDispatcher {
     let changed = false;
 
     const wantDamping = enableDamping && !this.temporarilyDisableDamping;
-    const deltaFactor = wantDamping ? Math.min(dampingFactor * targetFPSOverActualFPS) : 1;
+    const deltaFactor = wantDamping ? Math.min(dampingFactor * this.targetFPSOverActualFPS) : 1;
     this.temporarilyDisableDamping = false;
 
     if (
@@ -259,7 +258,9 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = delta < 0;
-    const deltaDistance = this.camera instanceof PerspectiveCamera ?
+    const deltaDistance =
+      // @ts-ignore
+      this.camera.isPerspectiveCamera ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
@@ -290,13 +291,10 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private rotate = (deltaX: number, deltaY: number) => {
-    const speedFactor = this.targetFPSOverActualFPS;
     const azimuthAngle =
-      speedFactor *
       (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) *
       deltaX;
     const polarAngle =
-      speedFactor *
       (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) *
       deltaY;
     if (this.firstPersonMode) {
@@ -454,15 +452,13 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
-    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor, targetFPSOverActualFPS } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     // rotate
     const azimuthAngle =
-      targetFPSOverActualFPS *
       this.keyboardRotationSpeedAzimuth *
       (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
     let polarAngle =
-      targetFPSOverActualFPS *
       this.keyboardRotationSpeedPolar *
       (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
@@ -537,8 +533,9 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    if (camera instanceof PerspectiveCamera) {
-      targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    // @ts-ignore
+    if (camera.isPerspectiveCamera) {
+      targetDistance *= Math.tan((((camera as PerspectiveCamera).fov / 2) * Math.PI) / 180);
     }
 
     // we actually don't use screenWidth, since perspective camera is fixed to screen height
@@ -607,9 +604,12 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
-    if (this.camera instanceof OrthographicCamera) {
+    const { camera } = this;
+    // @ts-ignore
+    if (camera.isOrthographicCamera) {
       this.dollyOrthographicCamera(x, y, deltaDistance);
-    } else {
+    // @ts-ignore
+    } else if (camera.isPerspectiveCamera) {
       this.dollyPerspectiveCamera(x, y, deltaDistance);
     }
   }
