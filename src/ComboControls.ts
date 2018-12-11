@@ -260,7 +260,7 @@ export default class ComboControls extends EventDispatcher {
     const dollyIn = delta < 0;
     const deltaDistance =
       // @ts-ignore
-      this.camera.isPerspectiveCamera === 'PerspectiveCamera' ?
+      this.camera.isPerspectiveCamera ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
