@@ -129,7 +129,6 @@ export default class ComboControls extends EventDispatcher {
       handleKeyboard,
       enableDamping,
       dampingFactor,
-      targetFPSOverActualFPS,
       EPSILON,
       targetFPS,
     } = this;
@@ -148,7 +147,7 @@ export default class ComboControls extends EventDispatcher {
     let changed = false;
 
     const wantDamping = enableDamping && !this.temporarilyDisableDamping;
-    const deltaFactor = wantDamping ? Math.min(dampingFactor * targetFPSOverActualFPS) : 1;
+    const deltaFactor = wantDamping ? Math.min(dampingFactor * this.targetFPSOverActualFPS) : 1;
     this.temporarilyDisableDamping = false;
 
     if (
@@ -291,13 +290,10 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private rotate = (deltaX: number, deltaY: number) => {
-    const speedFactor = this.targetFPSOverActualFPS;
     const azimuthAngle =
-      speedFactor *
       (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) *
       deltaX;
     const polarAngle =
-      speedFactor *
       (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) *
       deltaY;
     if (this.firstPersonMode) {
@@ -455,15 +451,13 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
-    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor, targetFPSOverActualFPS } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     // rotate
     const azimuthAngle =
-      targetFPSOverActualFPS *
       this.keyboardRotationSpeedAzimuth *
       (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
     let polarAngle =
-      targetFPSOverActualFPS *
       this.keyboardRotationSpeedPolar *
       (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
