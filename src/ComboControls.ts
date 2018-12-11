@@ -259,7 +259,8 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = delta < 0;
-    const deltaDistance = this.camera instanceof PerspectiveCamera ?
+    const deltaDistance =
+      this.camera.constructor.name === 'PerspectiveCamera' ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
@@ -537,8 +538,8 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    if (camera instanceof PerspectiveCamera) {
-      targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    if (camera.constructor.name === 'PerspectiveCamera') {
+      targetDistance *= Math.tan((((camera as PerspectiveCamera).fov / 2) * Math.PI) / 180);
     }
 
     // we actually don't use screenWidth, since perspective camera is fixed to screen height
@@ -607,7 +608,7 @@ export default class ComboControls extends EventDispatcher {
   }
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
-    if (this.camera instanceof OrthographicCamera) {
+    if (this.camera.constructor.name === 'OrthographicCamera') {
       this.dollyOrthographicCamera(x, y, deltaDistance);
     } else {
       this.dollyPerspectiveCamera(x, y, deltaDistance);
