@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import ComboControls from '../';
-declare var require: any;
 const queryString = require('query-string');
 
 const width = window.innerWidth;

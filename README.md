@@ -86,6 +86,7 @@ controls.keyboardRotationSpeedPolar = 10 * Math.PI / 360; // rotation speed for 
 
 controls.minZoom = 0; // minimum zoom distance, only available when camera is orthographic
 controls.maxZoom = Infinity; // maximum zoom distance, only available when camera is orthographic
+controls.orthographicCameraDollyFactor = 0.3; // dolly factor of orthographic camera
 ```
 
 ## License

@@ -8,7 +8,6 @@ import {
   Vector2,
   Vector3,
   Raycaster,
-  Camera,
   PerspectiveCamera,
   OrthographicCamera,
 } from 'three';
@@ -75,6 +74,7 @@ export default class ComboControls extends EventDispatcher {
   public dispose: () => void;
   public minZoom: number = 0;
   public maxZoom: number = Infinity;
+  public orthographicCameraDollyFactor: number = 0.3;
 
   private temporarilyDisableDamping: Boolean = false;
   private camera: PerspectiveCamera | OrthographicCamera;
@@ -261,7 +261,7 @@ export default class ComboControls extends EventDispatcher {
     const dollyIn = delta < 0;
     const deltaDistance = this.camera instanceof PerspectiveCamera ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
-      Math.sign(delta) * 0.3;
+      Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
   }
 
