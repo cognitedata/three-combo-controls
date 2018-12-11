@@ -37,6 +37,7 @@
     "start": "webpack-dev-server --color --progress --config webpack.dev.js"
   },
   "devDependencies": {
+    "@types/node": "^10.12.12",
     "@types/three": "^0.93.9",
     "clean-webpack-plugin": "^1.0.0",
     "html-webpack-plugin": "^3.2.0",
@@ -64,5 +65,8 @@
     "type": "git",
     "url": "https://github.com/cognitedata/three-combo-controls.git"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "dependencies": {
+    "query-string": "^6.2.0"
+  }
 }

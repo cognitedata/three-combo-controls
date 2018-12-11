@@ -4,11 +4,12 @@ import {
   EventDispatcher,
   Math as ThreeMath,
   MOUSE,
-  PerspectiveCamera,
   Spherical,
   Vector2,
   Vector3,
   Raycaster,
+  PerspectiveCamera,
+  OrthographicCamera,
 } from 'three';
 import Keyboard from './Keyboard';
 
@@ -71,11 +72,14 @@ export default class ComboControls extends EventDispatcher {
   public pinchPanSpeed: number = 1;
   public EPSILON: number = 0.001;
   public dispose: () => void;
+  public minZoom: number = 0;
+  public maxZoom: number = Infinity;
+  public orthographicCameraDollyFactor: number = 0.3;
 
   private temporarilyDisableDamping: Boolean = false;
-  private camera: PerspectiveCamera;
+  private camera: PerspectiveCamera | OrthographicCamera;
   private firstPersonMode: Boolean = false;
-  private reusableCamera: PerspectiveCamera = new PerspectiveCamera();
+  private reusableCamera: PerspectiveCamera | OrthographicCamera;
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
   private target: Vector3 = new Vector3();
@@ -91,9 +95,10 @@ export default class ComboControls extends EventDispatcher {
   private targetFPS: number = 30;
   private targetFPSOverActualFPS: number = 1;
 
-  constructor(camera: PerspectiveCamera, domElement: HTMLElement) {
+  constructor(camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
     super();
     this.camera = camera;
+    this.reusableCamera = camera.clone();
     this.domElement = domElement;
 
     // rotation
@@ -254,7 +259,10 @@ export default class ComboControls extends EventDispatcher {
     y = (y / domElement.clientHeight) * -2 + 1;
 
     const dollyIn = delta < 0;
-    this.dolly(x, y, this.getDollyDeltaDistance(dollyIn, Math.abs(delta)));
+    const deltaDistance = this.camera instanceof PerspectiveCamera ?
+      this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
+      Math.sign(delta) * this.orthographicCameraDollyFactor;
+    this.dolly(x, y, deltaDistance);
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -508,6 +516,7 @@ export default class ComboControls extends EventDispatcher {
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
     const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    // @ts-ignore
     reusableCamera.copy(camera);
     reusableCamera.position.copy(camera.position);
     reusableCamera.lookAt(targetEnd);
@@ -528,14 +537,23 @@ export default class ComboControls extends EventDispatcher {
     let targetDistance = offsetVector.length();
 
     // half of the fov is center to top of screen
-    targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    if (camera instanceof PerspectiveCamera) {
+      targetDistance *= Math.tan(((camera.fov / 2) * Math.PI) / 180);
+    }
 
     // we actually don't use screenWidth, since perspective camera is fixed to screen height
     this.panLeft((2 * deltaX * targetDistance) / domElement.clientHeight);
     this.panUp((2 * deltaY * targetDistance) / domElement.clientHeight);
   }
 
-  private dolly = (x: number, y: number, deltaDistance: number) => {
+  private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
+    const camera = this.camera as OrthographicCamera;
+    camera.zoom *= 1 - deltaDistance;
+    camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
+    camera.updateProjectionMatrix();
+  }
+
+  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number) => {
     const {
       dynamicTarget,
       minDistance,
@@ -543,9 +561,11 @@ export default class ComboControls extends EventDispatcher {
       reusableVector3,
       sphericalEnd,
       targetEnd,
+      camera,
+      reusableCamera,
     } = this;
-    const { fov } = this.camera;
-    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - fov * 0.5));
+
+    const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - (camera as PerspectiveCamera).fov * 0.5));
     const distFromCameraToCursor = Math.sqrt(
       distFromCameraToScreenCenter * distFromCameraToScreenCenter +
       x * x +
@@ -554,12 +574,11 @@ export default class ComboControls extends EventDispatcher {
     const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
     const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
 
-    // find the ray from camera to (x, y)
-    const camera = this.reusableCamera;
-    camera.copy(this.camera);
-    camera.position.setFromSpherical(sphericalEnd).add(targetEnd);
-    camera.lookAt(targetEnd);
-    raycaster.setFromCamera({ x, y }, camera);
+    // @ts-ignore
+    reusableCamera.copy(camera);
+    reusableCamera.position.setFromSpherical(sphericalEnd).add(targetEnd);
+    reusableCamera.lookAt(targetEnd);
+    raycaster.setFromCamera({ x, y }, reusableCamera);
 
     const cameraDirection = reusableVector3;
     let radius = distToTarget + deltaDistance;
@@ -568,7 +587,7 @@ export default class ComboControls extends EventDispatcher {
       radius = minDistance;
       if (dynamicTarget) {
         // push targetEnd forward
-        camera.getWorldDirection(cameraDirection);
+        reusableCamera.getWorldDirection(cameraDirection);
         targetEnd.add(cameraDirection.normalize().multiplyScalar(Math.abs(deltaDistance)));
       } else {
         // stops camera from moving forward
@@ -580,11 +599,19 @@ export default class ComboControls extends EventDispatcher {
 
     sphericalEnd.radius = radius;
 
-    camera.getWorldDirection(cameraDirection);
+    reusableCamera.getWorldDirection(cameraDirection);
     cameraDirection.normalize().multiplyScalar(deltaDistance);
     const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
     const targetOffset = rayDirection.add(cameraDirection);
     targetEnd.add(targetOffset);
+  }
+
+  private dolly = (x: number, y: number, deltaDistance: number) => {
+    if (this.camera instanceof OrthographicCamera) {
+      this.dollyOrthographicCamera(x, y, deltaDistance);
+    } else {
+      this.dollyPerspectiveCamera(x, y, deltaDistance);
+    }
   }
 
   private getDollyDeltaDistance = (dollyIn: boolean, steps: number = 1) => {
