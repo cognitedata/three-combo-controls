@@ -66,7 +66,5 @@
     "url": "https://github.com/cognitedata/three-combo-controls.git"
   },
   "sideEffects": false,
-  "dependencies": {
-    "query-string": "^6.2.0"
-  }
+  "dependencies": {}
 }

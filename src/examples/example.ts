@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import ComboControls from '../';
-const queryString = require('query-string');
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 const scene = new THREE.Scene();
 
-const wantOrthographic = queryString.parse(location.search).orthographic !== undefined;
+const wantOrthographic = false;
 let camera;
 if (wantOrthographic) {
   camera = new THREE.OrthographicCamera(-width / height, width / height, 1 , -1, -1000, 1000);
