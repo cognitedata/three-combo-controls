@@ -394,7 +394,9 @@ export default class ComboControls extends EventDispatcher {
       const pinchInfo = getPinchInfo(domElement, event.touches);
       // dolly
       const distanceFactor = initialPinchInfo.distance / pinchInfo.distance;
-      this.sphericalEnd.radius = Math.max(distanceFactor * initialRadius, this.minDistance);
+      // Min distance / 5 because on phones it is reasonable to get quite close to the target,
+      // but we don't want to get too close since zooming slows down very close to target.
+      this.sphericalEnd.radius = Math.max(distanceFactor * initialRadius, this.minDistance / 5);
 
       // pan
       const deltaCenter = pinchInfo.center.clone().sub(previousPinchInfo.center);
