@@ -385,19 +385,16 @@ export default class ComboControls extends EventDispatcher {
 
   private startTouchPinch = (initialEvent: TouchEvent) => {
     const { domElement } = this;
-
     let previousPinchInfo = getPinchInfo(domElement, initialEvent.touches);
+    const initialPinchInfo = getPinchInfo(domElement, initialEvent.touches);
+    const initialRadius = this.spherical.radius;
 
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length !== 2) { return; }
       const pinchInfo = getPinchInfo(domElement, event.touches);
-
-      // doly
-      const distanceDelta = pinchInfo.distance - previousPinchInfo.distance;
-      if (Math.abs(distanceDelta) > this.pinchEpsilon) {
-        const dollyDistance = this.getDollyDeltaDistance(distanceDelta > 0);
-        this.dolly(0, 0, dollyDistance);
-      }
+      // dolly
+      const distanceFactor = initialPinchInfo.distance / pinchInfo.distance;
+      this.sphericalEnd.radius = Math.max(distanceFactor * initialRadius, this.minDistance);
 
       // pan
       const deltaCenter = pinchInfo.center.clone().sub(previousPinchInfo.center);
