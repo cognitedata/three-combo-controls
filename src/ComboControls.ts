@@ -59,6 +59,7 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
+  public panDollyMinDistanceFactor: number = 3.0;
   public firstPersonRotationFactor: number = 0.4;
   public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
@@ -511,6 +512,7 @@ export default class ComboControls extends EventDispatcher {
 
     offsetVector.copy(camera.position).sub(target);
     let targetDistance = offsetVector.length();
+    targetDistance = Math.max(this.panDollyMinDistanceFactor * this.minDistance, targetDistance);
 
     // half of the fov is center to top of screen
     // @ts-ignore
@@ -598,7 +600,9 @@ export default class ComboControls extends EventDispatcher {
     const { sphericalEnd, dollyFactor } = this;
     const zoomFactor = dollyFactor ** steps;
     const factor = dollyIn ? zoomFactor : (1 / zoomFactor);
-    return sphericalEnd.radius * (factor - 1);
+    let distance = sphericalEnd.radius;
+    distance = Math.max(distance, this.panDollyMinDistanceFactor * this.minDistance);
+    return distance * (factor - 1);
   }
 
   private panLeft = (distance: number) => {
