@@ -512,7 +512,7 @@ export default class ComboControls extends EventDispatcher {
 
     offsetVector.copy(camera.position).sub(target);
     let targetDistance = offsetVector.length();
-    targetDistance = Math.max(this.panDollyMinDistanceFactor * this.minDistance, targetDistance);
+    targetDistance = Math.max(targetDistance, this.panDollyMinDistanceFactor * this.minDistance);
 
     // half of the fov is center to top of screen
     // @ts-ignore
