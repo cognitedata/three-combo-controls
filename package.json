@@ -3,6 +3,7 @@
   "version": "1.2.5",
   "description": "Orbit & first person camera controller for THREE.JS",
   "main": "dist/main.js",
+  "browser": "dist/main.js",
   "contributors": [
     "Fredrik Anfinsen <fredrik.anfinsen@cognite.com>",
     "Haowei Guo <haowei.guo@cognite.com>"
