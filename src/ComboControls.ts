@@ -148,7 +148,7 @@ export default class ComboControls extends EventDispatcher {
     let changed = false;
 
     const wantDamping = enableDamping && !this.temporarilyDisableDamping;
-    const deltaFactor = wantDamping ? Math.min(dampingFactor * this.targetFPSOverActualFPS) : 1;
+    const deltaFactor = wantDamping ? Math.min(dampingFactor * this.targetFPSOverActualFPS, 1) : 1;
     this.temporarilyDisableDamping = false;
 
     if (
