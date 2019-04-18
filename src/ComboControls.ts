@@ -261,7 +261,7 @@ export default class ComboControls extends EventDispatcher {
       this.camera.isPerspectiveCamera ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
-    this.dolly(x, y, deltaDistance, false);
+    this.dolly(x, y, deltaDistance);
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -433,7 +433,7 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
-    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor, dynamicTarget } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     // rotate
     const azimuthAngle =
@@ -458,7 +458,7 @@ export default class ComboControls extends EventDispatcher {
     const speedFactor = (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
-      this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor), dynamicTarget);
+      this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
       this.firstPersonMode = true;
     }
 
@@ -532,8 +532,9 @@ export default class ComboControls extends EventDispatcher {
     camera.updateProjectionMatrix();
   }
 
-  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number, dynamicTarget: boolean) => {
+  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number) => {
     const {
+      dynamicTarget,
       minDistance,
       raycaster,
       reusableVector3,
@@ -584,14 +585,14 @@ export default class ComboControls extends EventDispatcher {
     targetEnd.add(targetOffset);
   }
 
-  private dolly = (x: number, y: number, deltaDistance: number, dynamicTarget: boolean) => {
+  private dolly = (x: number, y: number, deltaDistance: number) => {
     const { camera } = this;
     // @ts-ignore
     if (camera.isOrthographicCamera) {
       this.dollyOrthographicCamera(x, y, deltaDistance);
     // @ts-ignore
     } else if (camera.isPerspectiveCamera) {
-      this.dollyPerspectiveCamera(x, y, deltaDistance, dynamicTarget);
+      this.dollyPerspectiveCamera(x, y, deltaDistance);
     }
   }
 
