@@ -59,7 +59,6 @@ export default class ComboControls extends EventDispatcher {
   public maxPolarAngle: number = Math.PI; // radians
   public minAzimuthAngle: number = -Infinity; // radians
   public maxAzimuthAngle: number = Infinity; // radians
-  public panDollyMinDistanceFactor: number = 3.0;
   public firstPersonRotationFactor: number = 0.4;
   public pointerRotationSpeedAzimuth: number = defaultPointerRotationSpeed; // radians per pixel
   public pointerRotationSpeedPolar: number = defaultPointerRotationSpeed; // radians per pixel
@@ -261,7 +260,7 @@ export default class ComboControls extends EventDispatcher {
       this.camera.isPerspectiveCamera ?
       this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
       Math.sign(delta) * this.orthographicCameraDollyFactor;
-    this.dolly(x, y, deltaDistance, false);
+    this.dolly(x, y, deltaDistance);
   }
 
   private onTouchStart = (event: TouchEvent) => {
@@ -433,7 +432,7 @@ export default class ComboControls extends EventDispatcher {
   private handleKeyboard = () => {
     if (!this.enabled || !this.enableKeyboardNavigation) { return; }
 
-    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor, dynamicTarget } = this;
+    const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     // rotate
     const azimuthAngle =
@@ -458,7 +457,7 @@ export default class ComboControls extends EventDispatcher {
     const speedFactor = (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
-      this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor), dynamicTarget);
+      this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
       this.firstPersonMode = true;
     }
 
@@ -512,7 +511,6 @@ export default class ComboControls extends EventDispatcher {
 
     offsetVector.copy(camera.position).sub(target);
     let targetDistance = offsetVector.length();
-    targetDistance = Math.max(targetDistance, this.panDollyMinDistanceFactor * this.minDistance);
 
     // half of the fov is center to top of screen
     // @ts-ignore
@@ -532,8 +530,9 @@ export default class ComboControls extends EventDispatcher {
     camera.updateProjectionMatrix();
   }
 
-  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number, dynamicTarget: boolean) => {
+  private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number) => {
     const {
+      dynamicTarget,
       minDistance,
       raycaster,
       reusableVector3,
@@ -584,14 +583,14 @@ export default class ComboControls extends EventDispatcher {
     targetEnd.add(targetOffset);
   }
 
-  private dolly = (x: number, y: number, deltaDistance: number, dynamicTarget: boolean) => {
+  private dolly = (x: number, y: number, deltaDistance: number) => {
     const { camera } = this;
     // @ts-ignore
     if (camera.isOrthographicCamera) {
       this.dollyOrthographicCamera(x, y, deltaDistance);
     // @ts-ignore
     } else if (camera.isPerspectiveCamera) {
-      this.dollyPerspectiveCamera(x, y, deltaDistance, dynamicTarget);
+      this.dollyPerspectiveCamera(x, y, deltaDistance);
     }
   }
 
@@ -599,9 +598,7 @@ export default class ComboControls extends EventDispatcher {
     const { sphericalEnd, dollyFactor } = this;
     const zoomFactor = dollyFactor ** steps;
     const factor = dollyIn ? zoomFactor : (1 / zoomFactor);
-    let distance = sphericalEnd.radius;
-    distance = Math.max(distance, this.panDollyMinDistanceFactor * this.minDistance);
-    return distance * (factor - 1);
+    return sphericalEnd.radius * (factor - 1);
   }
 
   private panLeft = (distance: number) => {
