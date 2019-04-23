@@ -69,9 +69,9 @@ export default class ComboControls extends EventDispatcher {
   public maxZoom: number = Infinity;
   public orthographicCameraDollyFactor: number = 0.3;
 
-  private temporarilyDisableDamping: Boolean = false;
+  private temporarilyDisableDamping: boolean = false;
   private camera: PerspectiveCamera | OrthographicCamera;
-  private firstPersonMode: Boolean = false;
+  private firstPersonMode: boolean = false;
   private reusableCamera: PerspectiveCamera | OrthographicCamera;
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
