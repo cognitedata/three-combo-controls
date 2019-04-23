@@ -1,4 +1,4 @@
-const keyMap: {[s: string]: string} = {
+const keyMap: { [s: string]: string } = {
   16: 'shift',
   17: 'ctrl',
   18: 'alt',
@@ -13,7 +13,7 @@ const keyMap: {[s: string]: string} = {
   69: 'e',
   81: 'q',
   83: 's',
-  87: 'w',
+  87: 'w'
 };
 
 export default class Keyboard {
@@ -52,5 +52,5 @@ export default class Keyboard {
       this.keys[key] = 1;
     }
     return p;
-  }
+  };
 }
