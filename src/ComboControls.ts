@@ -233,8 +233,9 @@ export default class ComboControls extends EventDispatcher {
     event.preventDefault();
 
     let delta = 0;
+    // @ts-ignore event.wheelDelta is only part of WebKit / Opera / Explorer 9
     if (event.wheelDelta) {
-      // WebKit / Opera / Explorer 9
+      // @ts-ignore event.wheelDelta is only part of WebKit / Opera / Explorer 9
       delta = -event.wheelDelta / 40;
     } else if (event.detail) {
       // Firefox
