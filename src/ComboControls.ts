@@ -9,38 +9,31 @@ import {
   Vector3,
   Raycaster,
   PerspectiveCamera,
-  OrthographicCamera,
+  OrthographicCamera
 } from 'three';
 import Keyboard from './Keyboard';
 
 const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1;
 
-function getHTMLOffset(
-  domElement: HTMLElement,
-  clientX: number,
-  clientY: number,
-) {
-  return new Vector2(
-    clientX - domElement.offsetLeft,
-    clientY - domElement.offsetTop,
-  );
+function getHTMLOffset(domElement: HTMLElement, clientX: number, clientY: number) {
+  return new Vector2(clientX - domElement.offsetLeft, clientY - domElement.offsetTop);
 }
 
 function getPinchInfo(domElement: HTMLElement, touches: TouchList) {
   if (touches.length !== 2) {
     throw new Error('getPinchInfo only works if touches.length === 2');
   }
-  const touchList = [
-    touches[0],
-    touches[1],
-  ];
+  const touchList = [touches[0], touches[1]];
   const offsets = touchList.map(({ clientX, clientY }) => getHTMLOffset(domElement, clientX, clientY));
-  const center = offsets[0].clone().add(offsets[1]).multiplyScalar(0.5);
+  const center = offsets[0]
+    .clone()
+    .add(offsets[1])
+    .multiplyScalar(0.5);
   const distance = offsets[0].distanceTo(offsets[1]);
   return {
     center,
     distance,
-    offsets,
+    offsets
   };
 }
 
@@ -76,9 +69,9 @@ export default class ComboControls extends EventDispatcher {
   public maxZoom: number = Infinity;
   public orthographicCameraDollyFactor: number = 0.3;
 
-  private temporarilyDisableDamping: Boolean = false;
+  private temporarilyDisableDamping: boolean = false;
   private camera: PerspectiveCamera | OrthographicCamera;
-  private firstPersonMode: Boolean = false;
+  private firstPersonMode: boolean = false;
   private reusableCamera: PerspectiveCamera | OrthographicCamera;
   private reusableVector3: Vector3 = new Vector3();
   private domElement: HTMLElement;
@@ -130,7 +123,7 @@ export default class ComboControls extends EventDispatcher {
       enableDamping,
       dampingFactor,
       EPSILON,
-      targetFPS,
+      targetFPS
     } = this;
 
     // the target framerate
@@ -161,7 +154,7 @@ export default class ComboControls extends EventDispatcher {
       spherical.set(
         spherical.radius + deltaRadius * deltaFactor,
         spherical.phi + deltaPhi * deltaFactor,
-        spherical.theta + deltaTheta * deltaFactor,
+        spherical.theta + deltaTheta * deltaFactor
       );
       target.add(deltaTarget.multiplyScalar(deltaFactor));
       changed = true;
@@ -180,15 +173,15 @@ export default class ComboControls extends EventDispatcher {
 
     // Tell caller if camera has changed
     return changed;
-  }
+  };
 
   public getState = () => {
     const { target, camera } = this;
     return {
       target: target.clone(),
-      position: camera.position.clone(),
+      position: camera.position.clone()
     };
-  }
+  };
 
   public setState = (position: Vector3, target: Vector3) => {
     const offset = position.clone().sub(target);
@@ -198,7 +191,7 @@ export default class ComboControls extends EventDispatcher {
     this.spherical.copy(this.sphericalEnd);
     this.update(1000 / this.targetFPS);
     this.triggerCameraChangeEvent();
-  }
+  };
 
   public triggerCameraChangeEvent = () => {
     const { camera, target } = this;
@@ -206,13 +199,15 @@ export default class ComboControls extends EventDispatcher {
       type: 'cameraChange',
       camera: {
         position: camera.position,
-        target,
-      },
+        target
+      }
     });
-  }
+  };
 
   private onMouseDown = (event: MouseEvent) => {
-    if (!this.enabled) { return; }
+    if (!this.enabled) {
+      return;
+    }
     event.preventDefault();
 
     switch (event.button) {
@@ -229,10 +224,12 @@ export default class ComboControls extends EventDispatcher {
       default:
         break;
     }
-  }
+  };
 
   private onMouseWheel = (event: WheelEvent) => {
-    if (!this.enabled) { return; }
+    if (!this.enabled) {
+      return;
+    }
     event.preventDefault();
 
     let delta = 0;
@@ -257,14 +254,16 @@ export default class ComboControls extends EventDispatcher {
     const dollyIn = delta < 0;
     const deltaDistance =
       // @ts-ignore
-      this.camera.isPerspectiveCamera ?
-      this.getDollyDeltaDistance(dollyIn, Math.abs(delta)) :
-      Math.sign(delta) * this.orthographicCameraDollyFactor;
+      this.camera.isPerspectiveCamera
+        ? this.getDollyDeltaDistance(dollyIn, Math.abs(delta))
+        : Math.sign(delta) * this.orthographicCameraDollyFactor;
     this.dolly(x, y, deltaDistance);
-  }
+  };
 
   private onTouchStart = (event: TouchEvent) => {
-    if (!this.enabled) { return; }
+    if (!this.enabled) {
+      return;
+    }
     event.preventDefault();
 
     switch (event.touches.length) {
@@ -280,26 +279,26 @@ export default class ComboControls extends EventDispatcher {
       default:
         break;
     }
-  }
+  };
 
   private onContextMenu = (event: MouseEvent) => {
-    if (!this.enabled) { return; }
+    if (!this.enabled) {
+      return;
+    }
     event.preventDefault();
-  }
+  };
 
   private rotate = (deltaX: number, deltaY: number) => {
     const azimuthAngle =
-      (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) *
-      deltaX;
+      (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) * deltaX;
     const polarAngle =
-      (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) *
-      deltaY;
+      (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) * deltaY;
     if (this.firstPersonMode) {
       this.rotateFirstPersonMode(azimuthAngle, polarAngle);
     } else {
       this.rotateSpherical(azimuthAngle, polarAngle);
     }
-  }
+  };
 
   private startMouseRotation = (initialEvent: MouseEvent) => {
     const { domElement } = this;
@@ -318,7 +317,7 @@ export default class ComboControls extends EventDispatcher {
 
     document.addEventListener('mousemove', onMouseMove, { passive: false });
     document.addEventListener('mouseup', onMouseUp, { passive: false });
-  }
+  };
 
   private startMousePan = (initialEvent: MouseEvent) => {
     const { domElement } = this;
@@ -339,24 +338,18 @@ export default class ComboControls extends EventDispatcher {
 
     document.addEventListener('mousemove', onMouseMove, { passive: false });
     document.addEventListener('mouseup', onMouseUp, { passive: false });
-  }
+  };
 
   private startTouchRotation = (initialEvent: TouchEvent) => {
     const { domElement } = this;
 
-    let previousOffset = getHTMLOffset(
-      domElement,
-      initialEvent.touches[0].clientX,
-      initialEvent.touches[0].clientY,
-    );
+    let previousOffset = getHTMLOffset(domElement, initialEvent.touches[0].clientX, initialEvent.touches[0].clientY);
 
     const onTouchMove = (event: TouchEvent) => {
-      if (event.touches.length !== 1) { return; }
-      const newOffset = getHTMLOffset(
-        domElement,
-        event.touches[0].clientX,
-        event.touches[0].clientY,
-      );
+      if (event.touches.length !== 1) {
+        return;
+      }
+      const newOffset = getHTMLOffset(domElement, event.touches[0].clientX, event.touches[0].clientY);
       this.rotate(previousOffset.x - newOffset.x, previousOffset.y - newOffset.y);
       previousOffset = newOffset;
     };
@@ -381,7 +374,7 @@ export default class ComboControls extends EventDispatcher {
     document.addEventListener('touchstart', onTouchStart);
     document.addEventListener('touchmove', onTouchMove, { passive: false });
     document.addEventListener('touchend', onTouchEnd, { passive: false });
-  }
+  };
 
   private startTouchPinch = (initialEvent: TouchEvent) => {
     const { domElement } = this;
@@ -390,7 +383,9 @@ export default class ComboControls extends EventDispatcher {
     const initialRadius = this.spherical.radius;
 
     const onTouchMove = (event: TouchEvent) => {
-      if (event.touches.length !== 2) { return; }
+      if (event.touches.length !== 2) {
+        return;
+      }
       const pinchInfo = getPinchInfo(domElement, event.touches);
       // dolly
       const distanceFactor = initialPinchInfo.distance / pinchInfo.distance;
@@ -427,20 +422,20 @@ export default class ComboControls extends EventDispatcher {
     document.addEventListener('touchstart', onTouchStart);
     document.addEventListener('touchmove', onTouchMove);
     document.addEventListener('touchend', onTouchEnd);
-  }
+  };
 
   private handleKeyboard = () => {
-    if (!this.enabled || !this.enableKeyboardNavigation) { return; }
+    if (!this.enabled || !this.enableKeyboardNavigation) {
+      return;
+    }
 
     const { keyboard, keyboardDollySpeed, keyboardPanSpeed, keyboardSpeedFactor } = this;
 
     // rotate
     const azimuthAngle =
-      this.keyboardRotationSpeedAzimuth *
-      (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
+      this.keyboardRotationSpeedAzimuth * (Number(keyboard.isPressed('left')) - Number(keyboard.isPressed('right')));
     let polarAngle =
-      this.keyboardRotationSpeedPolar *
-      (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
+      this.keyboardRotationSpeedPolar * (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
       this.temporarilyDisableDamping = true;
       const { sphericalEnd } = this;
@@ -454,7 +449,7 @@ export default class ComboControls extends EventDispatcher {
 
     this.firstPersonMode = false;
 
-    const speedFactor = (keyboard.isPressed('shift') ? keyboardSpeedFactor : 1);
+    const speedFactor = keyboard.isPressed('shift') ? keyboardSpeedFactor : 1;
     const moveForward = keyboard.isPressed('w') ? true : keyboard.isPressed('s') ? false : undefined;
     if (moveForward !== undefined) {
       this.dolly(0, 0, this.getDollyDeltaDistance(moveForward, keyboardDollySpeed * speedFactor));
@@ -465,30 +460,19 @@ export default class ComboControls extends EventDispatcher {
     const horizontalMovement = Number(keyboard.isPressed('a')) - Number(keyboard.isPressed('d'));
     const verticalMovement = Number(keyboard.isPressed('e')) - Number(keyboard.isPressed('q'));
     if (horizontalMovement !== 0 || verticalMovement !== 0) {
-      this.pan(
-        speedFactor * keyboardPanSpeed * horizontalMovement,
-        speedFactor * keyboardPanSpeed * verticalMovement,
-      );
+      this.pan(speedFactor * keyboardPanSpeed * horizontalMovement, speedFactor * keyboardPanSpeed * verticalMovement);
       this.firstPersonMode = true;
     }
-  }
+  };
 
   private rotateSpherical = (azimuthAngle: number, polarAngle: number) => {
     const { sphericalEnd } = this;
-    const theta = ThreeMath.clamp(
-      sphericalEnd.theta + azimuthAngle,
-      this.minAzimuthAngle,
-      this.maxAzimuthAngle,
-    );
-    const phi = ThreeMath.clamp(
-      sphericalEnd.phi + polarAngle,
-      this.minPolarAngle,
-      this.maxPolarAngle,
-    );
+    const theta = ThreeMath.clamp(sphericalEnd.theta + azimuthAngle, this.minAzimuthAngle, this.maxAzimuthAngle);
+    const phi = ThreeMath.clamp(sphericalEnd.phi + polarAngle, this.minPolarAngle, this.maxPolarAngle);
     sphericalEnd.theta = theta;
     sphericalEnd.phi = phi;
     sphericalEnd.makeSafe();
-  }
+  };
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
     const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
@@ -504,7 +488,7 @@ export default class ComboControls extends EventDispatcher {
     reusableCamera.getWorldDirection(reusableVector3);
     targetEnd.addVectors(camera.position, reusableVector3.multiplyScalar(distToTarget));
     sphericalEnd.setFromVector3(reusableVector3.subVectors(reusableCamera.position, targetEnd));
-  }
+  };
 
   private pan = (deltaX: number, deltaY: number) => {
     const { domElement, camera, offsetVector, target } = this;
@@ -521,14 +505,14 @@ export default class ComboControls extends EventDispatcher {
     // we actually don't use screenWidth, since perspective camera is fixed to screen height
     this.panLeft((2 * deltaX * targetDistance) / domElement.clientHeight);
     this.panUp((2 * deltaY * targetDistance) / domElement.clientHeight);
-  }
+  };
 
   private dollyOrthographicCamera = (x: number, y: number, deltaDistance: number) => {
     const camera = this.camera as OrthographicCamera;
     camera.zoom *= 1 - deltaDistance;
     camera.zoom = ThreeMath.clamp(camera.zoom, this.minZoom, this.maxZoom);
     camera.updateProjectionMatrix();
-  }
+  };
 
   private dollyPerspectiveCamera = (x: number, y: number, deltaDistance: number) => {
     const {
@@ -539,14 +523,12 @@ export default class ComboControls extends EventDispatcher {
       sphericalEnd,
       targetEnd,
       camera,
-      reusableCamera,
+      reusableCamera
     } = this;
 
     const distFromCameraToScreenCenter = Math.tan(ThreeMath.degToRad(90 - (camera as PerspectiveCamera).fov * 0.5));
     const distFromCameraToCursor = Math.sqrt(
-      distFromCameraToScreenCenter * distFromCameraToScreenCenter +
-      x * x +
-      y * y,
+      distFromCameraToScreenCenter * distFromCameraToScreenCenter + x * x + y * y
     );
     const ratio = distFromCameraToCursor / distFromCameraToScreenCenter;
     const distToTarget = reusableVector3.setFromSpherical(sphericalEnd).length();
@@ -581,37 +563,37 @@ export default class ComboControls extends EventDispatcher {
     const rayDirection = raycaster.ray.direction.normalize().multiplyScalar(distFromRayOrigin);
     const targetOffset = rayDirection.add(cameraDirection);
     targetEnd.add(targetOffset);
-  }
+  };
 
   private dolly = (x: number, y: number, deltaDistance: number) => {
     const { camera } = this;
     // @ts-ignore
     if (camera.isOrthographicCamera) {
       this.dollyOrthographicCamera(x, y, deltaDistance);
-    // @ts-ignore
+      // @ts-ignore
     } else if (camera.isPerspectiveCamera) {
       this.dollyPerspectiveCamera(x, y, deltaDistance);
     }
-  }
+  };
 
   private getDollyDeltaDistance = (dollyIn: boolean, steps: number = 1) => {
     const { sphericalEnd, dollyFactor } = this;
     const zoomFactor = dollyFactor ** steps;
-    const factor = dollyIn ? zoomFactor : (1 / zoomFactor);
+    const factor = dollyIn ? zoomFactor : 1 / zoomFactor;
     return sphericalEnd.radius * (factor - 1);
-  }
+  };
 
   private panLeft = (distance: number) => {
     const { camera, targetEnd, panVector } = this;
     panVector.setFromMatrixColumn(camera.matrix, 0); // get X column of objectMatrix
     panVector.multiplyScalar(-distance);
     targetEnd.add(panVector);
-  }
+  };
 
   private panUp = (distance: number) => {
     const { camera, targetEnd, panVector } = this;
     panVector.setFromMatrixColumn(camera.matrix, 1); // get X column of objectMatrix
     panVector.multiplyScalar(distance);
     targetEnd.add(panVector);
-  }
+  };
 }

@@ -38,6 +38,7 @@
     "start": "webpack-dev-server --color --progress --config webpack.dev.js"
   },
   "devDependencies": {
+    "@cognite/tslint-config-cognite-3d": "^1.0.4",
     "@types/node": "^10.12.12",
     "@types/three": "^0.93.9",
     "clean-webpack-plugin": "^1.0.0",
@@ -47,7 +48,7 @@
     "ts-loader": "^5.3.0",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.16.0",
-    "tslint-eslint-rules": "^5.4.0",
+    "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.1.6",
     "webpack": "^4.26.0",
     "webpack-cli": "^3.1.2",
@@ -66,6 +67,5 @@
     "type": "git",
     "url": "https://github.com/cognitedata/three-combo-controls.git"
   },
-  "sideEffects": false,
-  "dependencies": {}
+  "sideEffects": false
 }
