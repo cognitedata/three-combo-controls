@@ -124,8 +124,13 @@ export default class ComboControls extends EventDispatcher {
       enableDamping,
       dampingFactor,
       EPSILON,
-      targetFPS
+      targetFPS,
+      enabled
     } = this;
+
+    if (!enabled) {
+      return false;
+    }
 
     // the target framerate
     const actualFPS = Math.min(1 / deltaTime, targetFPS);
