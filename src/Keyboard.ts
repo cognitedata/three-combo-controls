@@ -24,6 +24,10 @@ export default class Keyboard {
     });
 
     window.addEventListener('keydown', event => {
+      if (event.metaKey) {
+        return;
+      }
+
       if (event.keyCode in keyMap) {
         if (this.keys[keyMap[event.keyCode]] === 0) {
           this.keys[keyMap[event.keyCode]] = 2;
