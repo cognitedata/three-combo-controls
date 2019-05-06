@@ -24,7 +24,7 @@ export default class Keyboard {
     });
 
     window.addEventListener('keydown', event => {
-      if (event.metaKey) {
+      if (event.metaKey || event.altKey || event.ctrlKey) {
         return;
       }
 
