@@ -59,6 +59,7 @@ export default class ComboControls extends EventDispatcher {
   public enableKeyboardNavigation: boolean = true;
   public keyboardRotationSpeedAzimuth: number = defaultKeyboardRotationSpeed;
   public keyboardRotationSpeedPolar: number = defaultKeyboardRotationSpeed;
+  public mouseFirstPersonRotationSpeed: number = defaultPointerRotationSpeed * 2;
   public keyboardDollySpeed: number = 2;
   public keyboardPanSpeed: number = 10;
   public keyboardSpeedFactor: number = 3; // how much quicker keyboard navigation will be with 'shift' pressed
@@ -75,6 +76,7 @@ export default class ComboControls extends EventDispatcher {
   private firstPersonMode: boolean = false;
   private reusableCamera: PerspectiveCamera | OrthographicCamera;
   private reusableVector3: Vector3 = new Vector3();
+  private _accumulatedMouseMove: Vector2 = new Vector2();
   private domElement: HTMLElement;
   private target: Vector3 = new Vector3();
   private targetEnd: Vector3 = new Vector3();
@@ -103,12 +105,14 @@ export default class ComboControls extends EventDispatcher {
     domElement.addEventListener('touchstart', this.onTouchStart);
     domElement.addEventListener('wheel', this.onMouseWheel);
     domElement.addEventListener('contextmenu', this.onContextMenu);
+    window.addEventListener('mouseup', this.onMouseUp);
 
     this.dispose = () => {
       domElement.removeEventListener('mousedown', this.onMouseDown);
       domElement.removeEventListener('wheel', this.onMouseWheel);
       domElement.removeEventListener('touchstart', this.onTouchStart);
       domElement.removeEventListener('contextmenu', this.onContextMenu);
+      window.removeEventListener('mouseup', this.onMouseUp);
     };
   }
 
@@ -137,8 +141,16 @@ export default class ComboControls extends EventDispatcher {
     this.targetFPSOverActualFPS = targetFPS / actualFPS;
 
     handleKeyboard();
-
-    const deltaTheta = sphericalEnd.theta - spherical.theta;
+    
+    if (this._accumulatedMouseMove.lengthSq() > 0) {
+      this.rotate(this._accumulatedMouseMove.x, this._accumulatedMouseMove.y);
+      this._accumulatedMouseMove.set(0,0);
+    }
+    
+    let deltaTheta = sphericalEnd.theta - spherical.theta;
+    if (Math.abs(deltaTheta) > Math.PI) {
+      deltaTheta -= 2.0 * Math.PI * Math.sign(deltaTheta);
+    }
     const deltaPhi = sphericalEnd.phi - spherical.phi;
     const deltaRadius = sphericalEnd.radius - spherical.radius;
     deltaTarget.subVectors(targetEnd, target);
@@ -162,6 +174,7 @@ export default class ComboControls extends EventDispatcher {
         spherical.phi + deltaPhi * deltaFactor,
         spherical.theta + deltaTheta * deltaFactor
       );
+      spherical.theta = spherical.theta % (2.0 * Math.PI);
       target.add(deltaTarget.multiplyScalar(deltaFactor));
       changed = true;
     } else {
@@ -232,6 +245,10 @@ export default class ComboControls extends EventDispatcher {
     }
   };
 
+  private onMouseUp = (event: MouseEvent) => {
+    this._accumulatedMouseMove.set(0,0);
+  }
+
   private onMouseWheel = (event: WheelEvent) => {
     if (!this.enabled) {
       return;
@@ -296,11 +313,17 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private rotate = (deltaX: number, deltaY: number) => {
+    if (deltaX === 0 && deltaY === 0) {
+      return;
+    }
+    
     const azimuthAngle =
-      (this.firstPersonMode ? this.keyboardRotationSpeedAzimuth : this.pointerRotationSpeedAzimuth) * deltaX;
-    const polarAngle =
-      (this.firstPersonMode ? this.keyboardRotationSpeedPolar : this.pointerRotationSpeedPolar) * deltaY;
+    (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedAzimuth) * deltaX;
+    let polarAngle =
+    (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedPolar) * deltaY;
+
     if (this.firstPersonMode) {
+      this.temporarilyDisableDamping = true;
       this.rotateFirstPersonMode(azimuthAngle, polarAngle);
     } else {
       this.rotateSpherical(azimuthAngle, polarAngle);
@@ -313,7 +336,8 @@ export default class ComboControls extends EventDispatcher {
 
     const onMouseMove = (event: MouseEvent) => {
       const newOffset = new Vector2(event.offsetX, event.offsetY);
-      this.rotate(previousOffset.x - newOffset.x, previousOffset.y - newOffset.y);
+      const deltaOffset = previousOffset.clone().sub(newOffset);
+      this._accumulatedMouseMove.add(deltaOffset);
       previousOffset = newOffset;
     };
 
@@ -444,7 +468,6 @@ export default class ComboControls extends EventDispatcher {
     let polarAngle =
       this.keyboardRotationSpeedPolar * (Number(keyboard.isPressed('up')) - Number(keyboard.isPressed('down')));
     if (azimuthAngle !== 0 || polarAngle !== 0) {
-      this.temporarilyDisableDamping = true;
       const { sphericalEnd } = this;
       const oldPhi = sphericalEnd.phi;
       sphericalEnd.phi += polarAngle;
@@ -482,19 +505,18 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private rotateFirstPersonMode = (azimuthAngle: number, polarAngle: number) => {
-    const { camera, firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
-    // @ts-ignore
-    reusableCamera.copy(camera);
-    reusableCamera.position.copy(camera.position);
+    const { firstPersonRotationFactor, reusableCamera, reusableVector3, sphericalEnd, targetEnd } = this;
+    reusableCamera.position.setFromSpherical(sphericalEnd).add(targetEnd);
     reusableCamera.lookAt(targetEnd);
 
     reusableCamera.rotateX(firstPersonRotationFactor * polarAngle);
     reusableCamera.rotateY(firstPersonRotationFactor * azimuthAngle);
-
-    const distToTarget = targetEnd.distanceTo(camera.position);
+    
+    const distToTarget = targetEnd.distanceTo(reusableCamera.position);
     reusableCamera.getWorldDirection(reusableVector3);
-    targetEnd.addVectors(camera.position, reusableVector3.multiplyScalar(distToTarget));
+    targetEnd.addVectors(reusableCamera.position, reusableVector3.multiplyScalar(distToTarget));
     sphericalEnd.setFromVector3(reusableVector3.subVectors(reusableCamera.position, targetEnd));
+    sphericalEnd.makeSafe();
   };
 
   private pan = (deltaX: number, deltaY: number) => {
