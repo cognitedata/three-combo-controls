@@ -146,6 +146,8 @@ export default class ComboControls extends EventDispatcher {
       this.rotate(this._accumulatedMouseMove.x, this._accumulatedMouseMove.y);
       this._accumulatedMouseMove.set(0,0);
     }
+
+    sphericalEnd.theta = Math.sign(sphericalEnd.theta) * Math.min(Math.abs(sphericalEnd.theta), 2.0 * Math.PI);
     
     let deltaTheta = sphericalEnd.theta - spherical.theta;
     if (Math.abs(deltaTheta) > Math.PI) {
