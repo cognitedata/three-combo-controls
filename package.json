@@ -67,5 +67,8 @@
     "type": "git",
     "url": "https://github.com/cognitedata/three-combo-controls.git"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "dependencies": {
+    "lodash": "^4.17.15"
+  }
 }
