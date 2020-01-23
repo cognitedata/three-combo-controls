@@ -50,10 +50,10 @@
     "tslint-config-prettier": "^1.16.0",
     "tslint-plugin-prettier": "^2.0.1",
     "typescript": "^3.1.6",
-    "webpack": "^4.26.0",
+    "webpack": "^4.41.5",
     "webpack-cli": "^3.1.2",
-    "webpack-dev-server": "^3.1.10",
-    "webpack-merge": "^4.1.4",
+    "webpack-dev-server": "^3.10.1",
+    "webpack-merge": "^4.2.2",
     "webpack-node-externals": "^1.7.2"
   },
   "publishConfig": {
