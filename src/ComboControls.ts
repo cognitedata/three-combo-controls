@@ -229,7 +229,6 @@ export default class ComboControls extends EventDispatcher {
     if (!this.enabled) {
       return;
     }
-    event.preventDefault();
 
     switch (event.button) {
       case MOUSE.LEFT: {
@@ -238,6 +237,7 @@ export default class ComboControls extends EventDispatcher {
       }
 
       case MOUSE.RIGHT: {
+        event.preventDefault();
         this.startMousePan(event);
         break;
       }
