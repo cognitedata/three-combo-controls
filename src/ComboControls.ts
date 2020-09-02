@@ -141,14 +141,14 @@ export default class ComboControls extends EventDispatcher {
     this.targetFPSOverActualFPS = targetFPS / actualFPS;
 
     handleKeyboard();
-    
+
     if (this._accumulatedMouseMove.lengthSq() > 0) {
       this.rotate(this._accumulatedMouseMove.x, this._accumulatedMouseMove.y);
-      this._accumulatedMouseMove.set(0,0);
+      this._accumulatedMouseMove.set(0, 0);
     }
 
     sphericalEnd.theta = Math.sign(sphericalEnd.theta) * Math.min(Math.abs(sphericalEnd.theta), 2.0 * Math.PI);
-    
+
     let deltaTheta = sphericalEnd.theta - spherical.theta;
     if (Math.abs(deltaTheta) > Math.PI) {
       deltaTheta -= 2.0 * Math.PI * Math.sign(deltaTheta);
@@ -247,9 +247,9 @@ export default class ComboControls extends EventDispatcher {
     }
   };
 
-  private onMouseUp = (event: MouseEvent) => {
-    this._accumulatedMouseMove.set(0,0);
-  }
+  private onMouseUp = (_event: MouseEvent) => {
+    this._accumulatedMouseMove.set(0, 0);
+  };
 
   private onMouseWheel = (event: WheelEvent) => {
     if (!this.enabled) {
@@ -318,11 +318,11 @@ export default class ComboControls extends EventDispatcher {
     if (deltaX === 0 && deltaY === 0) {
       return;
     }
-    
+
     const azimuthAngle =
-    (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedAzimuth) * deltaX;
-    let polarAngle =
-    (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedPolar) * deltaY;
+      (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedAzimuth) * deltaX;
+    const polarAngle =
+      (this.firstPersonMode ? this.mouseFirstPersonRotationSpeed : this.pointerRotationSpeedPolar) * deltaY;
 
     if (this.firstPersonMode) {
       this.temporarilyDisableDamping = true;
@@ -333,7 +333,6 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private startMouseRotation = (initialEvent: MouseEvent) => {
-    const { domElement } = this;
     let previousOffset = new Vector2(initialEvent.offsetX, initialEvent.offsetY);
 
     const onMouseMove = (event: MouseEvent) => {
@@ -353,7 +352,6 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private startMousePan = (initialEvent: MouseEvent) => {
-    const { domElement } = this;
     let previousOffset = new Vector2(initialEvent.offsetX, initialEvent.offsetY);
 
     const onMouseMove = (event: MouseEvent) => {
@@ -513,7 +511,7 @@ export default class ComboControls extends EventDispatcher {
 
     reusableCamera.rotateX(firstPersonRotationFactor * polarAngle);
     reusableCamera.rotateY(firstPersonRotationFactor * azimuthAngle);
-    
+
     const distToTarget = targetEnd.distanceTo(reusableCamera.position);
     reusableCamera.getWorldDirection(reusableVector3);
     targetEnd.addVectors(reusableCamera.position, reusableVector3.multiplyScalar(distToTarget));
@@ -612,8 +610,7 @@ export default class ComboControls extends EventDispatcher {
     const { sphericalEnd, dollyFactor } = this;
     const zoomFactor = dollyFactor ** steps;
     const factor = dollyIn ? zoomFactor : 1 / zoomFactor;
-    const distance = Math.max(sphericalEnd.radius,
-      this.panDollyMinDistanceFactor * this.minDistance);
+    const distance = Math.max(sphericalEnd.radius, this.panDollyMinDistanceFactor * this.minDistance);
     return distance * (factor - 1);
   };
 
