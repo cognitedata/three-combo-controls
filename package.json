@@ -1,6 +1,6 @@
 {
   "name": "@cognite/three-combo-controls",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Orbit & first person camera controller for THREE.JS",
   "main": "dist/main.js",
   "browser": "dist/main.js",
