@@ -18,34 +18,23 @@ const keyMap: { [s: string]: string } = {
 
 export default class Keyboard {
   private keys: { [s: string]: number } = {};
+  private _disabled = false;
+
+  get disabled() {
+    return this._disabled;
+  }
+
+  set disabled(isDisabled: boolean) {
+    this._disabled = isDisabled;
+    if (isDisabled) {
+      this.removeEventListeners();
+    } else {
+      this.addEventListeners();
+    }
+  }
+
   constructor() {
-    Object.keys(keyMap).forEach((key: string) => {
-      this.keys[keyMap[key]] = 0;
-    });
-
-    window.addEventListener('keydown', event => {
-      if (event.metaKey || event.altKey || event.ctrlKey) {
-        return;
-      }
-
-      if (event.keyCode in keyMap) {
-        if (this.keys[keyMap[event.keyCode]] === 0) {
-          this.keys[keyMap[event.keyCode]] = 2;
-        }
-      }
-    });
-
-    window.addEventListener('keyup', event => {
-      if (event.keyCode in keyMap) {
-        this.keys[keyMap[event.keyCode]] = 0;
-      }
-    });
-
-    window.addEventListener('blur', () => {
-      Object.keys(this.keys).forEach(key => {
-        this.keys[key] = 0;
-      });
-    });
+    this.addEventListeners();
   }
 
   public isPressed = (key: string) => this.keys[key] >= 1;
@@ -56,5 +45,44 @@ export default class Keyboard {
       this.keys[key] = 1;
     }
     return p;
+  };
+
+  private addEventListeners = () => {
+    this.clearPressedKeys();
+
+    window.addEventListener('keydown', this.onKeydown);
+    window.addEventListener('keyup', this.onKeyup);
+    window.addEventListener('blur', this.clearPressedKeys);
+  };
+
+  private removeEventListeners = () => {
+    window.removeEventListener('keydown', this.onKeydown);
+    window.removeEventListener('keyup', this.onKeyup);
+    window.removeEventListener('blur', this.clearPressedKeys);
+  };
+
+  private onKeydown = (event: KeyboardEvent) => {
+    if (event.metaKey || event.altKey || event.ctrlKey) {
+      return;
+    }
+
+    if (event.keyCode in keyMap) {
+      if (this.keys[keyMap[event.keyCode]] === 0) {
+        this.keys[keyMap[event.keyCode]] = 2;
+      }
+      event.preventDefault();
+    }
+  };
+
+  private onKeyup = (event: KeyboardEvent) => {
+    if (event.keyCode in keyMap) {
+      this.keys[keyMap[event.keyCode]] = 0;
+    }
+  };
+
+  private clearPressedKeys = () => {
+    Object.keys(keyMap).forEach((key: string) => {
+      this.keys[keyMap[key]] = 0;
+    });
   };
 }

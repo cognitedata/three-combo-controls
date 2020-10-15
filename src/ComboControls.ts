@@ -90,6 +90,7 @@ export default class ComboControls extends EventDispatcher {
   private raycaster: Raycaster = new Raycaster();
   private targetFPS: number = 30;
   private targetFPSOverActualFPS: number = 1;
+  private isFocused = false;
 
   constructor(camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
     super();
@@ -105,14 +106,27 @@ export default class ComboControls extends EventDispatcher {
     domElement.addEventListener('touchstart', this.onTouchStart);
     domElement.addEventListener('wheel', this.onMouseWheel);
     domElement.addEventListener('contextmenu', this.onContextMenu);
+
+    // canvas has no blur/focus by default, but it's possible to set tabindex on it,
+    // in that case events will be fired (we don't set tabindex here, but still support that case)
+    domElement.addEventListener('focus', this.onFocusChanged);
+    domElement.addEventListener('blur', this.onFocusChanged);
+
     window.addEventListener('mouseup', this.onMouseUp);
+    window.addEventListener('mousedown', this.onFocusChanged);
+    window.addEventListener('touchstart', this.onFocusChanged);
 
     this.dispose = () => {
       domElement.removeEventListener('mousedown', this.onMouseDown);
       domElement.removeEventListener('wheel', this.onMouseWheel);
       domElement.removeEventListener('touchstart', this.onTouchStart);
       domElement.removeEventListener('contextmenu', this.onContextMenu);
+      domElement.removeEventListener('focus', this.onFocusChanged);
+      domElement.removeEventListener('blur', this.onFocusChanged);
+
       window.removeEventListener('mouseup', this.onMouseUp);
+      window.removeEventListener('mousedown', this.onFocusChanged);
+      window.removeEventListener('touchstart', this.onFocusChanged);
     };
   }
 
@@ -307,6 +321,13 @@ export default class ComboControls extends EventDispatcher {
     }
   };
 
+  private onFocusChanged = (event: MouseEvent | TouchEvent | FocusEvent) => {
+    this.isFocused =
+      event.type !== 'blur' && (event.target === this.domElement || document.activeElement === this.domElement);
+
+    this.keyboard.disabled = !this.isFocused;
+  };
+
   private onContextMenu = (event: MouseEvent) => {
     if (!this.enabled) {
       return;
@@ -456,7 +477,7 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private handleKeyboard = () => {
-    if (!this.enabled || !this.enableKeyboardNavigation) {
+    if (!this.enabled || !this.enableKeyboardNavigation || !this.isFocused) {
       return;
     }
 
