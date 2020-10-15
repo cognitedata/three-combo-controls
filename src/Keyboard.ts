@@ -70,9 +70,8 @@ export default class Keyboard {
       if (this.keys[keyMap[event.keyCode]] === 0) {
         this.keys[keyMap[event.keyCode]] = 2;
       }
+      event.preventDefault();
     }
-
-    event.preventDefault();
   };
 
   private onKeyup = (event: KeyboardEvent) => {
