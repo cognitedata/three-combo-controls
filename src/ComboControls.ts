@@ -354,10 +354,9 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private startMouseRotation = (initialEvent: MouseEvent) => {
-    let previousOffset = new Vector2(initialEvent.offsetX, initialEvent.offsetY);
-
+    let previousOffset = getHTMLOffset(this.domElement, initialEvent.clientX, initialEvent.clientY);
     const onMouseMove = (event: MouseEvent) => {
-      const newOffset = new Vector2(event.offsetX, event.offsetY);
+      const newOffset = getHTMLOffset(this.domElement, event.clientX, event.clientY);
       const deltaOffset = previousOffset.clone().sub(newOffset);
       this._accumulatedMouseMove.add(deltaOffset);
       previousOffset = newOffset;
@@ -373,10 +372,10 @@ export default class ComboControls extends EventDispatcher {
   };
 
   private startMousePan = (initialEvent: MouseEvent) => {
-    let previousOffset = new Vector2(initialEvent.offsetX, initialEvent.offsetY);
+    let previousOffset = getHTMLOffset(this.domElement, initialEvent.clientX, initialEvent.clientY);
 
     const onMouseMove = (event: MouseEvent) => {
-      const newOffset = new Vector2(event.offsetX, event.offsetY);
+      const newOffset = getHTMLOffset(this.domElement, event.clientX, event.clientY);
       const xDifference = newOffset.x - previousOffset.x;
       const yDifference = newOffset.y - previousOffset.y;
       previousOffset = newOffset;
