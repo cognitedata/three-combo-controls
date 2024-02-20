@@ -1,3 +1,7 @@
+## **Note**
+
+This repository is no longer maintained or actively used by Cognite AS, and has therefore been archived
+
 # three-combo-controls
 
 > Orbit &amp; first person camera controller for [three.js](https://threejs.org/)
